@@ -399,7 +399,7 @@ extension DeviceCatalog {
         )
     ]
 
-    static let pumps: [PumpCatalogEntry] = [
+    private static let allKnownPumps: [PumpCatalogEntry] = [
         PumpCatalogEntry(
             OmniPumpManager.self,
             manufacturer: .insulet,
@@ -446,6 +446,9 @@ extension DeviceCatalog {
             reportsRewindEvents: false
         )
     ]
+
+    /// Only the virtual pump (simulator) is offered in this version.
+    static let pumps: [PumpCatalogEntry] = allKnownPumps.filter { $0.manufacturer == .simulator }
 }
 
 // MARK: - Lookups
@@ -453,7 +456,7 @@ extension DeviceCatalog {
 extension DeviceCatalog {
     static let cgmManagerEntries: [CGMCatalogEntry] = cgms.filter { $0.managerType != nil }
 
-    static let pumpManagersByIdentifier: [String: PumpManagerUI.Type] = pumps.reduce(into: [:]) { result, entry in
+    static let pumpManagersByIdentifier: [String: PumpManagerUI.Type] = allKnownPumps.reduce(into: [:]) { result, entry in
         result[entry.id] = entry.manager
     }
 
@@ -462,16 +465,12 @@ extension DeviceCatalog {
         cgms.map(CGMModel.init)
     }
 
-    /// Pumps offered during onboarding: real hardware only, since onboarding is configuring actual therapy.
+    /// Pumps offered during onboarding: only the simulator in this build.
     static var onboardingPumps: [PumpCatalogEntry] {
-        pumps.filter { $0.manufacturer != .simulator }
+        pumps
     }
 
     /// Resolves an already-paired pump to an onboarding-eligible entry.
-    ///
-    /// Users upgrading from a pre-onboarding Trio already have an instantiated pump manager, so onboarding
-    /// preselects it. Anything not offered during onboarding — the simulator, or a driver no longer catalogued —
-    /// falls back to the default, which is what the old manager cascade did by only testing the four real pumps.
     static func onboardingPump(forPersistedIdentifier identifier: String) -> PumpCatalogEntry {
         guard let entry = pumpEntry(forPersistedIdentifier: identifier),
               onboardingPumps.contains(entry)
@@ -481,10 +480,9 @@ extension DeviceCatalog {
         return entry
     }
 
-    /// Onboarding's fallback when no pump is paired yet, and for any pump not offered during onboarding.
+    /// Onboarding's fallback when no pump is paired yet: the simulator.
     static var defaultOnboardingPump: PumpCatalogEntry {
-        // Omnipod has always been this fallback; its basal bounds are the DASH values onboarding assumed.
-        pumps.first { $0.manufacturer == .insulet } ?? pumps[0]
+        pumps[0]
     }
 
     static func cgmEntry(id: String) -> CGMCatalogEntry? {
@@ -492,19 +490,15 @@ extension DeviceCatalog {
     }
 
     static func pumpEntry(id: String) -> PumpCatalogEntry? {
-        pumps.first { $0.id == id }
+        allKnownPumps.first { $0.id == id }
     }
 
     /// Resolves an identifier read back from persisted pump state, including ones written by retired managers.
-    ///
-    /// Note the identifier used for alert routing is *not* always this one: `AlertCatalogRegistry` keys MiniMed
-    /// entries under "Minimed" while `MinimedPumpManager.pluginIdentifier` is "Minimed500". Do not unify them —
-    /// see TrioTests/MinimedKitAlertEmissionTests.swift.
     static func pumpEntry(forPersistedIdentifier identifier: String) -> PumpCatalogEntry? {
         if let exact = pumpEntry(id: identifier) {
             return exact
         }
-        return pumps.first { entry in
+        return allKnownPumps.first { entry in
             entry.legacyIdentifierPrefixes.contains { identifier.hasPrefix($0) }
         }
     }
