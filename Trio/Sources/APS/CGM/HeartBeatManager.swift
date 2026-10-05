@@ -301,6 +301,8 @@ public final class HeartBeatManager: NSObject, ObservableObject {
     private var bluetoothTransmitter: BluetoothTransmitter?
     private var initialSetupDone = false
     private let scanner = BLEHeartbeatScanner()
+    private var configuredMode: HeartbeatMode?
+    private var configuredAddress: String?
 
     public var onHeartbeat: (() -> Void)?
 
@@ -315,7 +317,17 @@ public final class HeartBeatManager: NSObject, ObservableObject {
     // MARK: - Setup & Configuration
 
     public func applySettings(settings: TrioSettings) {
-        switch settings.heartbeatMode {
+        let newMode = settings.heartbeatMode
+        let newAddress = settings.heartbeatDeviceAddress
+
+        if configuredMode == newMode, configuredAddress == newAddress {
+            return
+        }
+
+        configuredMode = newMode
+        configuredAddress = newAddress
+
+        switch newMode {
         case .none:
             stop()
 
@@ -329,7 +341,7 @@ public final class HeartBeatManager: NSObject, ObservableObject {
 
         case .bluetooth:
             SilentAudioPlayer.shared.stop()
-            guard let address = settings.heartbeatDeviceAddress, !address.isEmpty else {
+            guard let address = newAddress, !address.isEmpty else {
                 stop()
                 return
             }
@@ -358,6 +370,8 @@ public final class HeartBeatManager: NSObject, ObservableObject {
     }
 
     public func stop() {
+        configuredMode = .none
+        configuredAddress = nil
         stopBluetooth()
         SilentAudioPlayer.shared.stop()
         connectionStatus = "Disconnected"

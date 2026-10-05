@@ -12,47 +12,39 @@ extension PumpConfig {
         @Published var pumpState: PumpDisplayState?
         private(set) var initialSettings: PumpInitialSettings = .default
         @Injected() var bluetoothManager: BluetoothStateManager!
+        @Injected() var broadcaster: Broadcaster!
 
         var isSimulator: Bool {
             (provider.apsManager.pumpManager as? MockPumpManager) != nil
         }
 
-        var heartbeatMode: HeartbeatMode {
-            get { settingsManager.settings.heartbeatMode }
-            set {
-                var s = settingsManager.settings
-                s.heartbeatMode = newValue
-                settingsManager.settings = s
-            }
-        }
-
-        var heartbeatDeviceName: String? {
-            settingsManager.settings.heartbeatDeviceName
-        }
-
-        var heartbeatDeviceAddress: String? {
-            settingsManager.settings.heartbeatDeviceAddress
-        }
+        @Published var heartbeatMode: HeartbeatMode = .none
+        @Published var heartbeatDeviceName: String? = nil
+        @Published var heartbeatDeviceAddress: String? = nil
+        @Published var heartbeatDeviceType: String? = nil
 
         func selectHeartbeatDevice(_ device: DiscoveredHeartbeatDevice) {
-            var s = settingsManager.settings
-            s.heartbeatDeviceAddress = device.id
-            s.heartbeatDeviceName = device.name
-            s.heartbeatDeviceType = device.type.rawValue
-            s.heartbeatMode = .bluetooth
-            settingsManager.settings = s
+            heartbeatDeviceAddress = device.id
+            heartbeatDeviceName = device.name
+            heartbeatDeviceType = device.type.rawValue
+            heartbeatMode = .bluetooth
         }
 
         func disconnectHeartbeatDevice() {
-            var s = settingsManager.settings
-            s.heartbeatDeviceAddress = nil
-            s.heartbeatDeviceName = nil
-            s.heartbeatDeviceType = nil
-            s.heartbeatMode = .none
-            settingsManager.settings = s
+            heartbeatDeviceAddress = nil
+            heartbeatDeviceName = nil
+            heartbeatDeviceType = nil
+            heartbeatMode = .none
         }
 
         override func subscribe() {
+            subscribeSetting(\.heartbeatMode, on: $heartbeatMode) { [weak self] in self?.heartbeatMode = $0 }
+            subscribeSetting(\.heartbeatDeviceName, on: $heartbeatDeviceName) { [weak self] in self?.heartbeatDeviceName = $0 }
+            subscribeSetting(\.heartbeatDeviceAddress, on: $heartbeatDeviceAddress) { [weak self] in self?.heartbeatDeviceAddress = $0 }
+            subscribeSetting(\.heartbeatDeviceType, on: $heartbeatDeviceType) { [weak self] in self?.heartbeatDeviceType = $0 }
+
+            broadcaster.register(SettingsObserver.self, observer: self)
+
             provider.pumpDisplayState
                 .receive(on: DispatchQueue.main)
                 .assign(to: \.pumpState, on: self)
@@ -105,3 +97,21 @@ extension PumpConfig.StateModel: PumpManagerOnboardingDelegate {
         // TODO:
     }
 }
+
+extension PumpConfig.StateModel: SettingsObserver {
+    func settingsDidChange(_ settings: TrioSettings) {
+        if heartbeatMode != settings.heartbeatMode {
+            heartbeatMode = settings.heartbeatMode
+        }
+        if heartbeatDeviceName != settings.heartbeatDeviceName {
+            heartbeatDeviceName = settings.heartbeatDeviceName
+        }
+        if heartbeatDeviceAddress != settings.heartbeatDeviceAddress {
+            heartbeatDeviceAddress = settings.heartbeatDeviceAddress
+        }
+        if heartbeatDeviceType != settings.heartbeatDeviceType {
+            heartbeatDeviceType = settings.heartbeatDeviceType
+        }
+    }
+}
+
