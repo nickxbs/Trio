@@ -25,6 +25,7 @@ protocol FetchGlucoseManager: SourceInfoProvider {
     /// etc.) into the unified `TrioAlertManager` pipeline. Read by
     /// `PluginSource.issueAlert` / `retractAlert`.
     var trioAlertManager: TrioAlertManager! { get }
+    func triggerHeartbeat()
 }
 
 extension FetchGlucoseManager {
@@ -35,6 +36,12 @@ extension FetchGlucoseManager {
 
 final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
     private let processQueue = DispatchQueue(label: "BaseGlucoseManager.processQueue")
+
+    func triggerHeartbeat() {
+        processQueue.async { [weak self] in
+            self?.timer.fire()
+        }
+    }
 
     @Injected() var broadcaster: Broadcaster!
     @Injected() var glucoseStorage: GlucoseStorage!

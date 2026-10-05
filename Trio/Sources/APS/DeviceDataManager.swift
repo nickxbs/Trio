@@ -205,7 +205,10 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
     var bluetoothManager: BluetoothStateManager { bluetoothProvider }
 
     var hasBLEHeartbeat: Bool {
-        (pumpManager as? MockPumpManager) == nil
+        if (pumpManager as? MockPumpManager) == nil {
+            return true
+        }
+        return HeartBeatManager.shared.isHeartbeatActive
     }
 
     let pumpDisplayState = CurrentValueSubject<PumpDisplayState?, Never>(nil)
@@ -218,6 +221,15 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
         injectServices(resolver)
         setupPumpManager()
         UIDevice.current.isBatteryMonitoringEnabled = true
+        broadcaster.register(SettingsObserver.self, observer: self)
+
+        HeartBeatManager.shared.onHeartbeat = { [weak self] in
+            guard let self = self else { return }
+            debug(.deviceManager, "Virtual Pump Heartbeat trigger fired")
+            self.resolver?.resolve(FetchGlucoseManager.self)?.triggerHeartbeat()
+            self.heartbeat(date: Date())
+        }
+        HeartBeatManager.shared.applySettings(settings: settingsManager.settings)
 
         // Refresh the pump's heartbeat schedule on foreground, matching Loop's didBecomeActive
         appActiveCancellable = Foundation.NotificationCenter.default
@@ -378,7 +390,7 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
     }
 
     func pumpManagerMustProvideBLEHeartbeat(_: PumpManager) -> Bool {
-        !cgmProvidesBLEHeartbeat
+        !cgmProvidesBLEHeartbeat && !HeartBeatManager.shared.isHeartbeatActive
     }
 
     /// Persists the pump's battery level for the home-screen battery pill.
@@ -673,4 +685,10 @@ protocol PumpReservoirObserver {
 
 protocol PumpDeactivatedObserver {
     func pumpDeactivatedDidChange()
+}
+
+extension BaseDeviceDataManager: SettingsObserver {
+    func settingsDidChange(_ settings: TrioSettings) {
+        HeartBeatManager.shared.applySettings(settings: settings)
+    }
 }

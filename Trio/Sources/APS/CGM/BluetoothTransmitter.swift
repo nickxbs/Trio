@@ -39,7 +39,7 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     ///     - CBUUID_Receive: receive characteristic uuid as string, to which subscribe should be done
     ///     - heartbeat  : function to call when data is received on the receive characteristic or when there's a disconnect
     init(deviceAddress: String, servicesCBUUID: String, CBUUID_Receive: String, heartbeat: @escaping () -> Void) {
-        servicesCBUUIDs = [CBUUID(string: servicesCBUUID)]
+        servicesCBUUIDs = servicesCBUUID.isEmpty ? [] : [CBUUID(string: servicesCBUUID)]
 
         CBUUID_ReceiveCharacteristic = CBUUID_Receive
 
@@ -223,7 +223,7 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     func centralManager(_: CBCentralManager, didConnect peripheral: CBPeripheral) {
         debug(.deviceManager, "connected to peripheral with name \(peripheral.name ?? "'unknown'")")
 
-        peripheral.discoverServices(servicesCBUUIDs)
+        peripheral.discoverServices(servicesCBUUIDs.isEmpty ? nil : servicesCBUUIDs)
     }
 
     func centralManager(_: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -309,7 +309,7 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             for characteristic in characteristics {
                 debug(.deviceManager, "    characteristic: \(String(describing: characteristic.uuid))")
 
-                if characteristic.uuid == CBUUID(string: CBUUID_ReceiveCharacteristic) {
+                if !CBUUID_ReceiveCharacteristic.isEmpty, characteristic.uuid == CBUUID(string: CBUUID_ReceiveCharacteristic) {
                     debug(.deviceManager, "    found receiveCharacteristic")
 
                     receiveCharacteristic = characteristic

@@ -15,6 +15,24 @@ enum BolusShortcutLimit: String, JSON, CaseIterable, Identifiable {
     }
 }
 
+enum HeartbeatMode: String, JSON, CaseIterable, Identifiable {
+    var id: String { rawValue }
+    case none
+    case bluetooth
+    case silentAudio
+
+    var displayName: String {
+        switch self {
+        case .none:
+            return String(localized: "None", comment: "No background heartbeat")
+        case .bluetooth:
+            return String(localized: "Bluetooth Device", comment: "Bluetooth device heartbeat")
+        case .silentAudio:
+            return String(localized: "Silent Audio", comment: "Silent audio background keep-alive")
+        }
+    }
+}
+
 struct TrioSettings: JSON, Equatable, Encodable {
     var units: GlucoseUnits = .mgdL
     var dosingMode: DosingMode = .open
@@ -85,6 +103,12 @@ struct TrioSettings: JSON, Equatable, Encodable {
 
     /// Controls whether watchface data transmission is enabled
     var isWatchfaceDataEnabled: Bool = false
+
+    /// Virtual pump background heartbeat mode (None, Bluetooth Device, or Silent Audio)
+    var heartbeatMode: HeartbeatMode = .none
+    var heartbeatDeviceAddress: String? = nil
+    var heartbeatDeviceName: String? = nil
+    var heartbeatDeviceType: String? = nil
 
     /// Computed property that groups all Garmin settings into a single struct
     var garminSettings: GarminWatchSettings {
@@ -383,6 +407,22 @@ extension TrioSettings: Decodable {
 
         if let isWatchfaceDataEnabled = try? container.decode(Bool.self, forKey: .isWatchfaceDataEnabled) {
             settings.isWatchfaceDataEnabled = isWatchfaceDataEnabled
+        }
+
+        if let heartbeatMode = try? container.decode(HeartbeatMode.self, forKey: .heartbeatMode) {
+            settings.heartbeatMode = heartbeatMode
+        }
+
+        if let heartbeatDeviceAddress = try? container.decode(String.self, forKey: .heartbeatDeviceAddress) {
+            settings.heartbeatDeviceAddress = heartbeatDeviceAddress
+        }
+
+        if let heartbeatDeviceName = try? container.decode(String.self, forKey: .heartbeatDeviceName) {
+            settings.heartbeatDeviceName = heartbeatDeviceName
+        }
+
+        if let heartbeatDeviceType = try? container.decode(String.self, forKey: .heartbeatDeviceType) {
+            settings.heartbeatDeviceType = heartbeatDeviceType
         }
 
         self = settings

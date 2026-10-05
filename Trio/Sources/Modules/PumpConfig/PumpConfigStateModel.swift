@@ -1,6 +1,7 @@
 import Foundation
 import LoopKit
 import LoopKitUI
+import MockKit
 import SwiftDate
 import SwiftUI
 
@@ -11,6 +12,45 @@ extension PumpConfig {
         @Published var pumpState: PumpDisplayState?
         private(set) var initialSettings: PumpInitialSettings = .default
         @Injected() var bluetoothManager: BluetoothStateManager!
+
+        var isSimulator: Bool {
+            (provider.apsManager.pumpManager as? MockPumpManager) != nil
+        }
+
+        var heartbeatMode: HeartbeatMode {
+            get { settingsManager.settings.heartbeatMode }
+            set {
+                var s = settingsManager.settings
+                s.heartbeatMode = newValue
+                settingsManager.settings = s
+            }
+        }
+
+        var heartbeatDeviceName: String? {
+            settingsManager.settings.heartbeatDeviceName
+        }
+
+        var heartbeatDeviceAddress: String? {
+            settingsManager.settings.heartbeatDeviceAddress
+        }
+
+        func selectHeartbeatDevice(_ device: DiscoveredHeartbeatDevice) {
+            var s = settingsManager.settings
+            s.heartbeatDeviceAddress = device.id
+            s.heartbeatDeviceName = device.name
+            s.heartbeatDeviceType = device.type.rawValue
+            s.heartbeatMode = .bluetooth
+            settingsManager.settings = s
+        }
+
+        func disconnectHeartbeatDevice() {
+            var s = settingsManager.settings
+            s.heartbeatDeviceAddress = nil
+            s.heartbeatDeviceName = nil
+            s.heartbeatDeviceType = nil
+            s.heartbeatMode = .none
+            settingsManager.settings = s
+        }
 
         override func subscribe() {
             provider.pumpDisplayState
