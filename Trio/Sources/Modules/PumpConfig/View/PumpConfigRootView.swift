@@ -86,13 +86,16 @@ extension PumpConfig {
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
+            .onDisappear {
+                heartbeatManager.stopScanning()
+            }
             .navigationBarTitleDisplayMode(.automatic)
             .navigationTitle("Insulin Pump")
             .sheet(isPresented: $state.setupPump) {
-                if let pumpManager = state.provider.apsManager.pumpManager {
+                if let pumpManager = state.provider?.apsManager.pumpManager {
                     PumpSettingsView(
                         pumpManager: pumpManager,
-                        bluetoothManager: state.provider.apsManager.bluetoothManager!,
+                        bluetoothManager: state.provider?.apsManager.bluetoothManager ?? bluetoothManager,
                         completionDelegate: state,
                         setupDelegate: state
                     )
@@ -100,7 +103,7 @@ extension PumpConfig {
                     PumpSetupView(
                         pumpEntry: pumpEntry,
                         pumpInitialSettings: state.initialSettings,
-                        bluetoothManager: state.provider.apsManager.bluetoothManager!,
+                        bluetoothManager: state.provider?.apsManager.bluetoothManager ?? bluetoothManager,
                         completionDelegate: state,
                         setupDelegate: state
                     )

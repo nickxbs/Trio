@@ -122,6 +122,12 @@ final class SilentAudioPlayer: NSObject {
         )
         Foundation.NotificationCenter.default.addObserver(
             self,
+            selector: #selector(handleRouteChange),
+            name: AVAudioSession.routeChangeNotification,
+            object: nil
+        )
+        Foundation.NotificationCenter.default.addObserver(
+            self,
             selector: #selector(handleMediaReset),
             name: AVAudioSession.mediaServicesWereResetNotification,
             object: nil
@@ -175,14 +181,22 @@ final class SilentAudioPlayer: NSObject {
               let type = AVAudioSession.InterruptionType(rawValue: typeValue)
         else { return }
 
-        if type == .ended {
-            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
-                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
-                if options.contains(.shouldResume) {
-                    try? AVAudioSession.sharedInstance().setActive(true)
-                    player?.play()
-                }
-            }
+        if type == .ended, isPlaying {
+            try? AVAudioSession.sharedInstance().setActive(true)
+            player?.play()
+        }
+    }
+
+    @objc private func handleRouteChange(notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
+        else { return }
+
+        if isPlaying, reason == .oldDeviceUnavailable {
+            // E.g. AirPods/Bluetooth disconnected: iOS pauses audio by default, resume it immediately.
+            try? AVAudioSession.sharedInstance().setActive(true)
+            player?.play()
         }
     }
 
@@ -240,6 +254,12 @@ final class BLEHeartbeatScanner: NSObject, CBCentralManagerDelegate {
             centralManager = CBCentralManager(delegate: self, queue: .main)
         } else if centralManager?.state == .poweredOn {
             centralManager?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+        }
+
+        // Safety timeout to preserve battery
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60.0) { [weak self] in
+            guard let self = self, self.isScanning else { return }
+            self.stopScanning()
         }
     }
 
@@ -357,16 +377,16 @@ public final class HeartBeatManager: NSObject, ObservableObject {
                     self?.handleHeartbeatTrigger()
                 }
             )
-            connectionStatus = "Connected"
         }
     }
 
     private func handleHeartbeatTrigger() {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             self.lastHeartbeatDate = Date()
             self.connectionStatus = "Heartbeat received"
+            self.onHeartbeat?()
         }
-        onHeartbeat?()
     }
 
     public func stop() {

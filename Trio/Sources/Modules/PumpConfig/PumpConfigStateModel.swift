@@ -14,9 +14,7 @@ extension PumpConfig {
         @Injected() var bluetoothManager: BluetoothStateManager!
         @Injected() var broadcaster: Broadcaster!
 
-        var isSimulator: Bool {
-            (provider.apsManager.pumpManager as? MockPumpManager) != nil
-        }
+        @Published var isSimulator: Bool = false
 
         @Published var heartbeatMode: HeartbeatMode = .none
         @Published var heartbeatDeviceName: String? = nil
@@ -38,6 +36,8 @@ extension PumpConfig {
         }
 
         override func subscribe() {
+            isSimulator = (provider?.apsManager.pumpManager as? MockPumpManager) != nil
+
             subscribeSetting(\.heartbeatMode, on: $heartbeatMode) { [weak self] in self?.heartbeatMode = $0 }
             subscribeSetting(\.heartbeatDeviceName, on: $heartbeatDeviceName) { [weak self] in self?.heartbeatDeviceName = $0 }
             subscribeSetting(\.heartbeatDeviceAddress, on: $heartbeatDeviceAddress) { [weak self] in self?.heartbeatDeviceAddress = $0 }
@@ -47,7 +47,10 @@ extension PumpConfig {
 
             provider.pumpDisplayState
                 .receive(on: DispatchQueue.main)
-                .assign(to: \.pumpState, on: self)
+                .sink { [weak self] state in
+                    self?.pumpState = state
+                    self?.isSimulator = (self?.provider?.apsManager.pumpManager as? MockPumpManager) != nil
+                }
                 .store(in: &lifetime)
             Task {
                 let basalSchedule = BasalRateSchedule(
@@ -84,6 +87,7 @@ extension PumpConfig.StateModel: CompletionDelegate {
 extension PumpConfig.StateModel: PumpManagerOnboardingDelegate {
     func pumpManagerOnboarding(didCreatePumpManager pumpManager: PumpManagerUI) {
         provider.setPumpManager(pumpManager)
+        isSimulator = (pumpManager as? MockPumpManager) != nil
         if let insulinType = pumpManager.status.insulinType {
             settingsManager.updateInsulinCurve(insulinType)
         }
