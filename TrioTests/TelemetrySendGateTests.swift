@@ -161,8 +161,8 @@ import Testing
 
     @Test("Application ID derives from build team and bundle IDs") func derivesApplicationID() {
         #expect(
-            TelemetryAttestor.appID(teamID: " ABC123 ", bundleID: "org.nightscout.user.trio") ==
-                "ABC123.org.nightscout.user.trio"
+            TelemetryAttestor.appID(teamID: " ABC123 ", bundleID: "org.cgmsim.user.trio") ==
+                "ABC123.org.cgmsim.user.trio"
         )
         #expect(
             TelemetryAttestor.appID(teamID: "ABC123", bundleID: "com.example.custom-fork") ==
@@ -176,7 +176,7 @@ import Testing
         let profile: [String: Any] = [
             "Entitlements": [
                 "application-identifier": "invalid",
-                "com.apple.application-identifier": "ABC123.org.nightscout.user.trio"
+                "com.apple.application-identifier": "ABC123.org.cgmsim.user.trio"
             ]
         ]
         let plist = try PropertyListSerialization.data(fromPropertyList: profile, format: .xml, options: 0)
@@ -187,8 +187,8 @@ import Testing
         #expect(
             TelemetryAttestor.appID(
                 fromProvisioningProfile: cmsEnvelope,
-                bundleID: "org.nightscout.fallback.trio"
-            ) == "ABC123.org.nightscout.user.trio"
+                bundleID: "org.cgmsim.fallback.trio"
+            ) == "ABC123.org.cgmsim.user.trio"
         )
     }
 
@@ -202,8 +202,8 @@ import Testing
         #expect(
             TelemetryAttestor.appID(
                 fromProvisioningProfile: plist,
-                bundleID: "org.nightscout.owner.trio"
-            ) == "TEAM123.org.nightscout.owner.trio"
+                bundleID: "org.cgmsim.owner.trio"
+            ) == "TEAM123.org.cgmsim.owner.trio"
         )
     }
 
@@ -214,7 +214,7 @@ import Testing
             #expect(
                 TelemetryAttestor.appID(
                     fromProvisioningProfile: data,
-                    bundleID: "org.nightscout.owner.trio"
+                    bundleID: "org.cgmsim.owner.trio"
                 ) == nil
             )
         }

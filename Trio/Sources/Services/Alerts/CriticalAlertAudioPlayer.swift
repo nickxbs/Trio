@@ -6,7 +6,7 @@ import UIKit
 
 @MainActor
 final class CriticalAlertAudioPlayer {
-    private let log = OSLog(subsystem: "org.nightscout.Trio", category: "CriticalAlertAudioPlayer")
+    private let log = OSLog(subsystem: "org.cgmsim.Trio", category: "CriticalAlertAudioPlayer")
 
     private var player: AVAudioPlayer?
     private var vibrationTimer: Timer?

@@ -125,7 +125,7 @@ _Please note that Trio uses a Trio-specific app group, not the same as Loop. Thi
 
 1. Go to [Register an App Group](https://developer.apple.com/account/resources/identifiers/applicationGroup/add/) on the apple developer site.
 1. For Description, use "Trio App Group".
-1. For Identifier, enter `group.org.nightscout.TEAMID.trio.trio-app-group`, substituting your team id for `TEAMID`.
+1. For Identifier, enter `group.org.cgmsim.TEAMID.trio.trio-app-group`, substituting your team id for `TEAMID`.
     * If you are told that this group already exists, skip ahead to [Optional: App Group Description Modification](#optional-app-group-description-modification)
 1. Click "Continue" and then "Register".
 
@@ -139,7 +139,7 @@ _Referring to the link and table below, tap on the **IDENTIFIER** for the `Trio 
 
 | NAME | Xcode version | IDENTIFIER |
 |:--|:--|:--|
-| Trio App Group | group org nightscout TEAMID trio trio-app-group | group.org.nightscout.TEAMID.trio.trio-app-group |
+| Trio App Group | group org cgmsim TEAMID trio trio-app-group | group.org.cgmsim.TEAMID.trio.trio-app-group |
 
 ## Bundle Identifiers
 
@@ -162,10 +162,10 @@ _Referring to the table below, tap on each **IDENTIFIER** that has a different *
 
 | NAME | Xcode version | IDENTIFIER |
 |:--|:--|:--|
-| Trio | XC org nightscout TEAMID trio | org.nightscout.TEAMID.trio |
-| Trio LiveActivity | - | org.nightscout.TEAMID.trio.LiveActivity |
-| Trio Watch App | XC IDENTIFIER | org.nightscout.TEAMID.trio.watchkitapp |
-| Trio Watch Complication | XC IDENTIFIER | org.nightscout.TEAMID.trio.watchkitapp.TrioWatchComplication |
+| Trio | XC org cgmsim TEAMID trio | org.cgmsim.TEAMID.trio |
+| Trio LiveActivity | - | org.cgmsim.TEAMID.trio.LiveActivity |
+| Trio Watch App | XC IDENTIFIER | org.cgmsim.TEAMID.trio.watchkitapp |
+| Trio Watch Complication | XC IDENTIFIER | org.cgmsim.TEAMID.trio.watchkitapp.TrioWatchComplication |
 
 ## Add App Group to Bundle Identifiers
 
@@ -199,7 +199,7 @@ There is an additional identifier, but it does not need the App Group added to i
 The `Trio` identifier requires the **Time Sensitive Notifications** capability to be enabled manually. This is only required for the `Trio` identifier, not the others. You can do this at the same time you add the `Trio App Group` to the `Trio` identifier - just check the box before you Save.
 
 1. Go to [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list) on the Apple developer site.
-1. Click on the `Trio` **IDENTIFIER** row (`org.nightscout.TEAMID.trio`, substituting your team id for `TEAMID`).
+1. Click on the `Trio` **IDENTIFIER** row (`org.cgmsim.TEAMID.trio`, substituting your team id for `TEAMID`).
 1. Scroll down until you see the "Time Sensitive Notifications" capability, and check its box to enable it.
 1. Click "Save".
 
@@ -212,7 +212,7 @@ If you created a Trio app in App Store Connect before, skip ahead to [Create Bui
     * Select a name: this will have to be unique, so you may have to try a few different names here, but it will not be the name you see on your phone, so it's not that important.
     * Select your primary language.
     * Choose the bundle ID that matches the `BUNDLE_IDENTIFIER` in your `Config.xcconfig` file
-    * This is typically `org.nightscout.TEAMID.trio` with `TEAMID` matching your team id
+    * This is typically `org.cgmsim.TEAMID.trio` with `TEAMID` matching your team id
     * SKU can be anything; e.g. "123".
     * Select "Full Access".
 1. Click Create

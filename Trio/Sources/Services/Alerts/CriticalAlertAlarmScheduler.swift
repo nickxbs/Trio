@@ -22,7 +22,7 @@ import os.log
 /// Ported from Loop's `CriticalAlertAlarmScheduler`.
 @MainActor
 final class CriticalAlertAlarmScheduler {
-    private let log = OSLog(subsystem: "org.nightscout.trio", category: "CriticalAlertAlarmScheduler")
+    private let log = OSLog(subsystem: "org.cgmsim.trio", category: "CriticalAlertAlarmScheduler")
 
     /// Maps an issued alert to the AlarmKit alarm scheduled for it, so the
     /// alarm can be cancelled when the alert is acknowledged or retracted.
@@ -50,7 +50,7 @@ final class CriticalAlertAlarmScheduler {
             } catch {
                 os_log(
                     "AlarmKit authorization request failed: %{public}@",
-                    log: OSLog(subsystem: "org.nightscout.trio", category: "CriticalAlertAlarmScheduler"),
+                    log: OSLog(subsystem: "org.cgmsim.trio", category: "CriticalAlertAlarmScheduler"),
                     type: .error,
                     String(describing: error)
                 )

@@ -227,7 +227,7 @@ final class BaseTidepoolManager: TidepoolManager, Injectable {
 
 extension BaseTidepoolManager: ServiceDelegate {
     var hostIdentifier: String {
-        "org.nightscout.Trio"
+        "org.cgmsim.Trio"
     }
 
     var hostVersion: String {
