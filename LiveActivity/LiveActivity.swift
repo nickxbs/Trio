@@ -64,7 +64,7 @@ struct LiveActivity: Widget {
                     glucoseColor: glucoseColor
                 )
             }
-            .widgetURL(URL(string: "Trio://"))
+            .widgetURL(URL(string: "TrioCGMSim://"))
             .keylineTint(glucoseColor)
             .contentMargins(.horizontal, 0, for: .minimal)
             .contentMargins(.trailing, 0, for: .compactLeading)
