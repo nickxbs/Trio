@@ -114,13 +114,13 @@ final class SilentAudioPlayer: NSObject {
     }
 
     private func setupNotifications() {
-        NotificationCenter.default.addObserver(
+        Foundation.NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleInterruption),
             name: AVAudioSession.interruptionNotification,
             object: nil
         )
-        NotificationCenter.default.addObserver(
+        Foundation.NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleMediaReset),
             name: AVAudioSession.mediaServicesWereResetNotification,
@@ -316,7 +316,7 @@ public final class HeartBeatManager: NSObject, ObservableObject {
 
     // MARK: - Setup & Configuration
 
-    public func applySettings(settings: TrioSettings) {
+    func applySettings(settings: TrioSettings) {
         let newMode = settings.heartbeatMode
         let newAddress = settings.heartbeatDeviceAddress
 
@@ -401,7 +401,7 @@ public final class HeartBeatManager: NSObject, ObservableObject {
 
     // MARK: - AppGroup / xDrip4iOS Legacy Compatibility
 
-    public func checkCGMBluetoothTransmitter(sharedUserDefaults: UserDefaults, heartbeat: DispatchTimer?) {
+    func checkCGMBluetoothTransmitter(sharedUserDefaults: UserDefaults, heartbeat: DispatchTimer?) {
         if !initialSetupDone {
             initialSetupDone = true
             UserDefaults.standard.cgmTransmitterDeviceAddress = nil
