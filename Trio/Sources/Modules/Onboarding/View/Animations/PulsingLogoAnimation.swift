@@ -14,10 +14,11 @@ struct PulsingLogoAnimation: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
     var body: some View {
-        Image("trioCircledNoBackground")
+        Image("trioTeal")
             .resizable()
             .scaledToFit()
             .frame(height: 100)
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .scaleEffect(scale)
             .opacity(opacity)
             .rotationEffect(.degrees(rotation))

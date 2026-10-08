@@ -53,10 +53,11 @@ struct LogoBurstSplash<Content: View>: View {
                         }
 
                         // logo
-                        Image("trioCircledNoBackground")
+                        Image("trioTeal")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 100, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                             .scaleEffect(isPulsing ? 1.1 : logoScale)
                             .opacity(logoOpacity)
                             .rotationEffect(.degrees(logoRotation))

@@ -19,10 +19,11 @@ extension Main {
                 VStack {
                     Spacer().frame(maxHeight: 92)
 
-                    Image(.trioCircledNoBackground)
+                    Image(.trioTeal)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 92, height: 92)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                         .shadow(color: Color.white.opacity(0.1), radius: 5, x: 0, y: 0)
 
                     Text("Trio v\(versionNumber)")
