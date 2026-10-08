@@ -328,10 +328,9 @@ final class BLEHeartbeatScanner: NSObject, CBCentralManagerDelegate {
             lastSeen: Date()
         )
 
-        let isNew = (devicesMap[id] == nil)
         devicesMap[id] = device
 
-        if isNew {
+        if !displayDevices.contains(where: { $0.id == id }) {
             // New device found: append to maintain stability of existing rows
             displayDevices.append(device)
             publishDevices()

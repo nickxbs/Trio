@@ -230,80 +230,76 @@ extension PumpConfig {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Nearby BLE Devices")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            if heartbeatManager.isScanning {
-                                HStack(spacing: 6) {
-                                    ProgressView()
-                                        .scaleEffect(0.7)
-                                    Button {
-                                        heartbeatManager.stopScanning()
-                                    } label: {
-                                        Text("Stop")
-                                            .font(.caption.bold())
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 4)
-                                            .background(Color.red.opacity(0.12))
-                                            .foregroundColor(.red)
-                                            .cornerRadius(6)
-                                    }
-                                    .buttonStyle(BorderlessButtonStyle())
-                                }
-                            } else {
+                    HStack {
+                        Text("Nearby BLE Devices")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        if heartbeatManager.isScanning {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .scaleEffect(0.7)
                                 Button {
-                                    heartbeatManager.startScanning()
+                                    heartbeatManager.stopScanning()
                                 } label: {
-                                    Text("Scan")
+                                    Text("Stop")
                                         .font(.caption.bold())
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
-                                        .background(Color.accentColor.opacity(0.12))
-                                        .foregroundColor(.accentColor)
+                                        .background(Color.red.opacity(0.12))
+                                        .foregroundColor(.red)
                                         .cornerRadius(6)
                                 }
                                 .buttonStyle(BorderlessButtonStyle())
                             }
-                        }
-
-                        if heartbeatManager.discoveredDevices.isEmpty {
-                            if heartbeatManager.isScanning {
-                                Text("Scanning for nearby Omnipod DASH, RileyLink, Dexcom...")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            } else {
-                                Text("Tap Scan to discover nearby Bluetooth devices.")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
                         } else {
-                            ForEach(heartbeatManager.discoveredDevices) { device in
-                                Button {
-                                    state.selectHeartbeatDevice(device)
-                                    heartbeatManager.stopScanning()
-                                } label: {
-                                    HStack {
-                                        Image(systemName: deviceIconName(device.type))
-                                            .foregroundColor(.accentColor)
-                                        VStack(alignment: .leading) {
-                                            Text(device.name)
-                                                .foregroundColor(.primary)
-                                            Text("\(device.type.displayName) • RSSI: \(device.rssi) dBm")
-                                                .font(.caption2)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        Spacer()
-                                        if device.id == state.heartbeatDeviceAddress {
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(.blue)
-                                        }
+                            Button {
+                                heartbeatManager.startScanning()
+                            } label: {
+                                Text("Scan")
+                                    .font(.caption.bold())
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color.accentColor.opacity(0.12))
+                                    .foregroundColor(.accentColor)
+                                    .cornerRadius(6)
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
+                    }
+
+                    if heartbeatManager.discoveredDevices.isEmpty {
+                        if heartbeatManager.isScanning {
+                            Text("Scanning for nearby Omnipod DASH, RileyLink, Dexcom...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("Tap Scan to discover nearby Bluetooth devices.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        ForEach(heartbeatManager.discoveredDevices) { device in
+                            Button {
+                                state.selectHeartbeatDevice(device)
+                                heartbeatManager.stopScanning()
+                            } label: {
+                                HStack {
+                                    Image(systemName: deviceIconName(device.type))
+                                        .foregroundColor(.accentColor)
+                                    VStack(alignment: .leading) {
+                                        Text(device.name)
+                                            .foregroundColor(.primary)
+                                        Text("\(device.type.displayName) • RSSI: \(device.rssi) dBm")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
                                     }
-                                    .contentShape(Rectangle())
+                                    Spacer()
+                                    if device.id == state.heartbeatDeviceAddress {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(.blue)
+                                    }
                                 }
-                                .buttonStyle(BorderlessButtonStyle())
                             }
                         }
                     }
