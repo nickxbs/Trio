@@ -293,6 +293,15 @@ jobs:
           FASTLANE_KEY: ${{ secrets.FASTLANE_KEY }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
 
+      # Upload build log dedicated artifact
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoopKit-Trio-build-log
+          path: buildlog/*.log
+          if-no-files-found: warn
+
       # Upload Build artifacts
       - name: Upload build log, IPA and Symbol artifacts
         if: always()
