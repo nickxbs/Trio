@@ -199,11 +199,18 @@ extension PumpConfig {
                                 }
                             }
                             Spacer()
-                            Button("Forget") {
+                            Button(role: .destructive) {
                                 state.disconnectHeartbeatDevice()
+                            } label: {
+                                Text("Forget")
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color.red.opacity(0.12))
+                                    .foregroundColor(.red)
+                                    .cornerRadius(8)
                             }
-                            .buttonStyle(.bordered)
-                            .tint(.red)
+                            .buttonStyle(BorderlessButtonStyle())
                         }
 
                         HStack {
@@ -230,17 +237,35 @@ extension PumpConfig {
                                 .foregroundColor(.secondary)
                             Spacer()
                             if heartbeatManager.isScanning {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Button("Stop") {
-                                    heartbeatManager.stopScanning()
+                                HStack(spacing: 6) {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                    Button {
+                                        heartbeatManager.stopScanning()
+                                    } label: {
+                                        Text("Stop")
+                                            .font(.caption.bold())
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(Color.red.opacity(0.12))
+                                            .foregroundColor(.red)
+                                            .cornerRadius(6)
+                                    }
+                                    .buttonStyle(BorderlessButtonStyle())
                                 }
-                                .font(.caption)
                             } else {
-                                Button("Scan") {
+                                Button {
                                     heartbeatManager.startScanning()
+                                } label: {
+                                    Text("Scan")
+                                        .font(.caption.bold())
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(Color.accentColor.opacity(0.12))
+                                        .foregroundColor(.accentColor)
+                                        .cornerRadius(6)
                                 }
-                                .font(.caption)
+                                .buttonStyle(BorderlessButtonStyle())
                             }
                         }
 
@@ -276,7 +301,9 @@ extension PumpConfig {
                                                 .foregroundColor(.blue)
                                         }
                                     }
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(BorderlessButtonStyle())
                             }
                         }
                     }

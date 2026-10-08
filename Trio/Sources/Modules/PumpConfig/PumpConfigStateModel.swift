@@ -29,6 +29,7 @@ extension PumpConfig {
         }
 
         func disconnectHeartbeatDevice() {
+            HeartBeatManager.shared.stopBluetooth()
             heartbeatDeviceAddress = nil
             heartbeatDeviceName = nil
             heartbeatDeviceType = nil

@@ -242,18 +242,32 @@ final class SilentAudioPlayer: NSObject {
 final class BLEHeartbeatScanner: NSObject, CBCentralManagerDelegate {
     private var centralManager: CBCentralManager?
     private var onDevicesUpdated: (([DiscoveredHeartbeatDevice]) -> Void)?
+    private var onScanStopped: (() -> Void)?
     private var devicesMap: [String: DiscoveredHeartbeatDevice] = [:]
+    private var displayDevices: [DiscoveredHeartbeatDevice] = []
+    private var sortTimer: Timer?
     private(set) var isScanning: Bool = false
 
-    func startScanning(onDevicesUpdated: @escaping ([DiscoveredHeartbeatDevice]) -> Void) {
+    func startScanning(
+        onDevicesUpdated: @escaping ([DiscoveredHeartbeatDevice]) -> Void,
+        onScanStopped: (() -> Void)? = nil
+    ) {
         self.onDevicesUpdated = onDevicesUpdated
+        self.onScanStopped = onScanStopped
         devicesMap.removeAll()
+        displayDevices.removeAll()
         isScanning = true
 
         if centralManager == nil {
             centralManager = CBCentralManager(delegate: self, queue: .main)
         } else if centralManager?.state == .poweredOn {
             centralManager?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+        }
+
+        // Periodic sorting every 10 seconds to avoid rapid reordering
+        sortTimer?.invalidate()
+        sortTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+            self?.reSortDevices()
         }
 
         // Safety timeout to preserve battery
@@ -264,13 +278,30 @@ final class BLEHeartbeatScanner: NSObject, CBCentralManagerDelegate {
     }
 
     func stopScanning() {
+        guard isScanning else { return }
         isScanning = false
+        sortTimer?.invalidate()
+        sortTimer = nil
         centralManager?.stopScan()
+        onScanStopped?()
+    }
+
+    private func reSortDevices() {
+        guard isScanning else { return }
+        let sorted = devicesMap.values.sorted { $0.rssi > $1.rssi }
+        displayDevices = Array(sorted)
+        publishDevices()
+    }
+
+    private func publishDevices() {
+        onDevicesUpdated?(displayDevices)
     }
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if central.state == .poweredOn, isScanning {
             central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+        } else if central.state != .poweredOn, central.state != .unknown {
+            stopScanning()
         }
     }
 
@@ -297,9 +328,17 @@ final class BLEHeartbeatScanner: NSObject, CBCentralManagerDelegate {
             lastSeen: Date()
         )
 
+        let isNew = (devicesMap[id] == nil)
         devicesMap[id] = device
-        let sorted = devicesMap.values.sorted { $0.rssi > $1.rssi }
-        onDevicesUpdated?(Array(sorted))
+
+        if isNew {
+            // New device found: append to maintain stability of existing rows
+            displayDevices.append(device)
+            publishDevices()
+        } else if let index = displayDevices.firstIndex(where: { $0.id == id }) {
+            // Update in place without changing row positions
+            displayDevices[index] = device
+        }
     }
 }
 
@@ -362,7 +401,9 @@ public final class HeartBeatManager: NSObject, ObservableObject {
         case .bluetooth:
             SilentAudioPlayer.shared.stop()
             guard let address = newAddress, !address.isEmpty else {
-                stop()
+                stopBluetooth()
+                connectionStatus = "Disconnected"
+                activeDeviceName = nil
                 return
             }
             let deviceType = HeartbeatDeviceType(rawValue: settings.heartbeatDeviceType ?? "") ?? .generic
@@ -377,6 +418,11 @@ public final class HeartBeatManager: NSObject, ObservableObject {
                     self?.handleHeartbeatTrigger()
                 }
             )
+            bluetoothTransmitter?.onConnectionStatusChanged = { [weak self] status in
+                DispatchQueue.main.async {
+                    self?.connectionStatus = status
+                }
+            }
         }
     }
 
@@ -398,20 +444,31 @@ public final class HeartBeatManager: NSObject, ObservableObject {
         activeDeviceName = nil
     }
 
-    private func stopBluetooth() {
+    public func stopBluetooth() {
         bluetoothTransmitter?.disconnect()
         bluetoothTransmitter = nil
+        if configuredMode == .bluetooth {
+            connectionStatus = "Disconnected"
+            activeDeviceName = nil
+        }
     }
 
     // MARK: - Scanning
 
     public func startScanning() {
         isScanning = true
-        scanner.startScanning { [weak self] devices in
-            DispatchQueue.main.async {
-                self?.discoveredDevices = devices
+        scanner.startScanning(
+            onDevicesUpdated: { [weak self] devices in
+                DispatchQueue.main.async {
+                    self?.discoveredDevices = devices
+                }
+            },
+            onScanStopped: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.isScanning = false
+                }
             }
-        }
+        )
     }
 
     public func stopScanning() {

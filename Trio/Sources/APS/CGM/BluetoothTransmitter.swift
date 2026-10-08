@@ -31,6 +31,12 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     /// to be called when data is received or if there's a disconnect, this is the actual heartbeat.
     private let heartbeat: () -> Void
 
+    /// flag indicating intentional disconnect
+    private var isManualDisconnect = false
+
+    /// callback for connection status updates
+    var onConnectionStatusChanged: ((String) -> Void)?
+
     // MARK: - Initialization
 
     /// - parameters:
@@ -79,13 +85,17 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
 
     /// will try to connect to the device, first by calling retrievePeripherals, if peripheral not known, then by calling startScanning
     func connect() {
-        if !retrievePeripherals(centralManager!) {
+        guard !isManualDisconnect else { return }
+        guard let central = centralManager, central.state == .poweredOn else { return }
+        if !retrievePeripherals(central) {
             startScanning()
         }
     }
 
     /// disconnect the device
     func disconnect() {
+        isManualDisconnect = true
+        stopScanning()
         if let peripheral = peripheral {
             var name = "unknown"
             if let peripheralName = peripheral.name {
@@ -94,15 +104,18 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
 
             debug(.deviceManager, "disconnecting from peripheral with name \(name)")
 
-            centralManager!.cancelPeripheralConnection(peripheral)
+            self.peripheral = nil
+            centralManager?.cancelPeripheralConnection(peripheral)
         }
+        centralManager?.delegate = nil
+        onConnectionStatusChanged?("Disconnected")
     }
 
     /// stops scanning
     func stopScanning() {
         debug(.deviceManager, "in stopScanning")
 
-        centralManager!.stopScan()
+        centralManager?.stopScan()
     }
 
     /// calls setNotifyValue for characteristic with value enabled
@@ -126,19 +139,20 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
 
     /// start bluetooth scanning for device
     fileprivate func startScanning() {
-        if centralManager!.state == .poweredOn {
-            debug(.deviceManager, "in startScanning")
-
-            centralManager!.scanForPeripherals(withServices: nil, options: nil)
-
-        } else {
+        guard !isManualDisconnect else { return }
+        guard let central = centralManager, central.state == .poweredOn else {
             debug(.deviceManager, "in startScanning. Not started, state is not poweredOn")
+            return
         }
+        debug(.deviceManager, "in startScanning")
+        onConnectionStatusChanged?("Connecting...")
+        central.scanForPeripherals(withServices: nil, options: nil)
     }
 
     /// stops scanning and connect. To be called after diddiscover
     fileprivate func stopScanAndconnect(to peripheral: CBPeripheral) {
-        centralManager!.stopScan()
+        guard !isManualDisconnect else { return }
+        centralManager?.stopScan()
 
         self.peripheral = peripheral
 
@@ -146,8 +160,8 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
 
         if peripheral.state == .disconnected {
             debug(.deviceManager, "    trying to connect")
-
-            centralManager!.connect(peripheral, options: nil)
+            onConnectionStatusChanged?("Connecting...")
+            centralManager?.connect(peripheral, options: nil)
 
         } else {
             debug(.deviceManager, "    calling centralManager(newCentralManager, didConnect: peripheral")
@@ -160,6 +174,7 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     ///
     /// the result of the attempt to try to find such device, is returned
     fileprivate func retrievePeripherals(_ central: CBCentralManager) -> Bool {
+        guard !isManualDisconnect else { return false }
         debug(.deviceManager, "in retrievePeripherals, deviceaddress is \(deviceAddress)")
 
         if let uuid = UUID(uuidString: deviceAddress) {
@@ -175,6 +190,7 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
 
                     peripheral.delegate = self
 
+                    onConnectionStatusChanged?("Connecting...")
                     central.connect(peripheral, options: nil)
 
                     return true
@@ -221,12 +237,14 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     }
 
     func centralManager(_: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        guard !isManualDisconnect else { return }
         debug(.deviceManager, "connected to peripheral with name \(peripheral.name ?? "'unknown'")")
-
+        onConnectionStatusChanged?("Connected")
         peripheral.discoverServices(servicesCBUUIDs.isEmpty ? nil : servicesCBUUIDs)
     }
 
     func centralManager(_: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        guard !isManualDisconnect else { return }
         if let error = error {
             debug(
                 .deviceManager,
@@ -236,8 +254,8 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         } else {
             debug(.deviceManager, "failed to connect, for peripheral with name \(peripheral.name ?? "'unknown'"), will try again")
         }
-
-        centralManager!.connect(peripheral, options: nil)
+        onConnectionStatusChanged?("Connecting...")
+        centralManager?.connect(peripheral, options: nil)
     }
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -246,14 +264,18 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             "in centralManagerDidUpdateState, for peripheral with name \(peripheral?.name ?? "'unknown'"), new state is \(central.state.rawValue)"
         )
 
-        /// in case status changed to powered on and if device address known then try to retrieveperipherals
+        guard !isManualDisconnect else { return }
+        /// in case status changed to powered on, initiate connection attempt
         if central.state == .poweredOn {
-            /// try to connect to device to which connection was successfully done previously, this attempt is done by callling retrievePeripherals(central)
-            _ = retrievePeripherals(central)
+            connect()
         }
     }
 
     func centralManager(_: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        guard !isManualDisconnect else {
+            debug(.deviceManager, "didDisconnectPeripheral after manual disconnect, ignoring")
+            return
+        }
         debug(.deviceManager, "    didDisconnect peripheral with name \(peripheral.name ?? "'unknown'")")
 
         // call heartbeat, useful for Dexcom transmitters, after a disconnect, then there's probably a new reading available
@@ -267,11 +289,12 @@ class BluetoothTransmitter: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         // otherwise disconnect occurred because of other (like out of range), so let's try to reconnect
         if let ownPeripheral = self.peripheral {
             debug(.deviceManager, "    Will try to reconnect")
-
-            centralManager!.connect(ownPeripheral, options: nil)
+            onConnectionStatusChanged?("Connecting...")
+            centralManager?.connect(ownPeripheral, options: nil)
 
         } else {
             debug(.deviceManager, "    peripheral is nil, will not try to reconnect")
+            onConnectionStatusChanged?("Disconnected")
         }
     }
 
