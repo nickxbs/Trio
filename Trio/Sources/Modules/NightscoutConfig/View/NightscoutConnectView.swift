@@ -19,16 +19,21 @@ struct NightscoutConnectView: View {
             Section(
                 header: Text("Connect to Nightscout"),
                 content: {
-                    HStack {
-                        TextField("URL", text: $state.url)
-                            .disableAutocorrection(true)
-                            .textContentType(.URL)
-                            .autocapitalization(.none)
-                            .keyboardType(.URL)
-                        if state.message.isNotEmpty && !state.isValidURL {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            TextField("https://<instance>.oracle.cgmsim.com", text: $state.url)
+                                .disableAutocorrection(true)
+                                .textContentType(.URL)
+                                .autocapitalization(.none)
+                                .keyboardType(.URL)
+                            if state.message.isNotEmpty && !state.isValidURL {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                            }
                         }
+                        Text("Allowed: https://*.oracle.cgmsim.com or https://*.oracle2.cgmsim.com")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                     SecureField("API secret", text: $state.secret)
                         .disableAutocorrection(true)

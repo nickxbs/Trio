@@ -75,13 +75,10 @@ extension NightscoutConfig {
         }
 
         func connect() {
-            if let CheckURL = url.last, CheckURL == "/" {
-                let fixedURL = url.dropLast()
-                url = String(fixedURL)
-            }
+            url = NightscoutURLValidator.normalize(url)
 
-            guard let url = URL(string: url), self.url.hasPrefix("https://") else {
-                message = "Invalid URL"
+            guard NightscoutURLValidator.isValidNightscoutURL(url), let url = URL(string: url) else {
+                message = NightscoutURLValidator.validationErrorMessage
                 isValidURL = false
                 return
             }

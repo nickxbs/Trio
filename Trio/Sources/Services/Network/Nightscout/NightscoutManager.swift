@@ -90,6 +90,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
     private var nightscoutAPI: NightscoutAPI? {
         guard let urlString = keychain.getValue(String.self, forKey: NightscoutConfig.Config.urlKey),
+              NightscoutURLValidator.isValidNightscoutURL(urlString),
               let url = URL(string: urlString),
               let secret = keychain.getValue(String.self, forKey: NightscoutConfig.Config.secretKey)
         else {

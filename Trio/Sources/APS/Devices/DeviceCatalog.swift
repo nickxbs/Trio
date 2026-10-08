@@ -338,8 +338,7 @@ struct PumpCatalogEntry: DeviceCatalogEntry {
 extension DeviceCatalog {
     static let defaultAllowedInsulinTypes: [InsulinType] = [.apidra, .humalog, .novolog, .fiasp, .lyumjev]
 
-    /// Order here is the order shown in the picker, within each manufacturer section.
-    static let cgms: [CGMCatalogEntry] = [
+    private static let allKnownCGMs: [CGMCatalogEntry] = [
         CGMCatalogEntry(.native(.none), manufacturer: .otherSources),
 
         // Both Libre names carry their variants inline, matching the titles the driver authors chose upstream.
@@ -399,6 +398,11 @@ extension DeviceCatalog {
         )
     ]
 
+    /// Only Nightscout is offered as CGM in this version.
+    static let cgms: [CGMCatalogEntry] = allKnownCGMs.filter {
+        $0.source == .native(.none) || $0.source == .native(.nightscout)
+    }
+
     private static let allKnownPumps: [PumpCatalogEntry] = [
         PumpCatalogEntry(
             OmniPumpManager.self,
@@ -449,6 +453,9 @@ extension DeviceCatalog {
 
     /// Only the virtual pump (simulator) is offered in this version.
     static let pumps: [PumpCatalogEntry] = allKnownPumps.filter { $0.manufacturer == .simulator }
+
+    static var allKnownCGMsForTesting: [CGMCatalogEntry] { allKnownCGMs }
+    static var allKnownPumpsForTesting: [PumpCatalogEntry] { allKnownPumps }
 }
 
 // MARK: - Lookups
@@ -486,7 +493,7 @@ extension DeviceCatalog {
     }
 
     static func cgmEntry(id: String) -> CGMCatalogEntry? {
-        cgms.first { $0.id == id }
+        allKnownCGMs.first { $0.id == id }
     }
 
     static func pumpEntry(id: String) -> PumpCatalogEntry? {

@@ -6,13 +6,10 @@ import SwiftUI
 
 extension Onboarding.StateModel {
     func connectToNightscout() {
-        if let CheckURL = nightscoutUrl.last, CheckURL == "/" {
-            let fixedURL = nightscoutUrl.dropLast()
-            nightscoutUrl = String(fixedURL)
-        }
+        nightscoutUrl = NightscoutURLValidator.normalize(nightscoutUrl)
 
-        guard let nightscoutUrl = URL(string: nightscoutUrl), self.nightscoutUrl.hasPrefix("https://") else {
-            nightscoutResponseMessage = "Invalid URL"
+        guard NightscoutURLValidator.isValidNightscoutURL(nightscoutUrl), let nightscoutUrl = URL(string: nightscoutUrl) else {
+            nightscoutResponseMessage = NightscoutURLValidator.validationErrorMessage
             isValidNightscoutURL = false
             return
         }

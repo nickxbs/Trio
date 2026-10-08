@@ -72,13 +72,25 @@ import UIKit
         }
     }
 
-    @Test("Every CGMType case is represented in the catalog") func testAllCGMTypesCovered() {
+    @Test("Every CGMType case is represented in allKnownCGMs") func testAllCGMTypesCovered() {
         for type in CGMType.allCases where type != .plugin {
             #expect(
-                DeviceCatalog.cgms.contains { $0.cgmType == type },
-                "CGMType.\(type.rawValue) is missing from the catalog"
+                DeviceCatalog.allKnownCGMsForTesting.contains { $0.cgmType == type },
+                "CGMType.\(type.rawValue) is missing from allKnownCGMs"
             )
         }
+    }
+
+    @Test("Only Nightscout is offered as selectable CGM in this build") func testNightscoutIsOnlyCGMOffered() {
+        let selectable = DeviceCatalog.cgms.filter(\.isSelectableInPicker)
+        #expect(selectable.count == 1)
+        #expect(selectable.first?.cgmType == .nightscout)
+    }
+
+    @Test("Only Pump Simulator is offered as selectable pump in this build") func testPumpSimulatorIsOnlyPumpOffered() {
+        let selectable = DeviceCatalog.pumps.filter(\.isSelectableInPicker)
+        #expect(selectable.count == 1)
+        #expect(selectable.first?.manufacturer == .simulator)
     }
 
     // MARK: - Picker presentation
@@ -91,9 +103,6 @@ import UIKit
     }
 
     @Test("Simulator sections sort last") func testSimulatorSortsLast() {
-        let cgmSections = DeviceCatalog.sections(for: DeviceCatalog.cgms)
-        #expect(cgmSections.last?.manufacturer == .simulator)
-
         let pumpSections = DeviceCatalog.sections(for: DeviceCatalog.pumps)
         #expect(pumpSections.last?.manufacturer == .simulator)
     }
@@ -112,11 +121,11 @@ import UIKit
     // MARK: - Model sub-lines
 
     @Test("Model sub-lines render as a comma-joined list") func testSupportedModelsLine() {
-        let omnipod = DeviceCatalog.pumps.first { $0.name == "Omnipod" }
+        let omnipod = DeviceCatalog.allKnownPumpsForTesting.first { $0.name == "Omnipod" }
         #expect(omnipod?.supportedModelsLine == "Classic, DASH, 5")
         #expect(omnipod?.hintLine == "Omnipod (Classic, DASH, 5)")
 
-        let g5 = DeviceCatalog.cgms.first { $0.name == "Dexcom G5" }
+        let g5 = DeviceCatalog.allKnownCGMsForTesting.first { $0.name == "Dexcom G5" }
         #expect(g5?.supportedModelsLine == nil, "An empty model list must collapse the row to one line")
         #expect(g5?.hintLine == "Dexcom G5")
     }
@@ -141,11 +150,11 @@ import UIKit
             "G6SensorKit" // native G6 transport, not wired up in Trio
         ]
 
-        let missingPumps = declared.pumps.subtracting(DeviceCatalog.pumps.map(\.id))
+        let missingPumps = declared.pumps.subtracting(DeviceCatalog.allKnownPumpsForTesting.map(\.id))
         #expect(missingPumps.isEmpty, "Vendored pumps absent from DeviceCatalog: \(missingPumps.sorted())")
 
         let missingCGMs = declared.cgms
-            .subtracting(DeviceCatalog.cgmManagerEntries.map(\.id))
+            .subtracting(DeviceCatalog.allKnownCGMsForTesting.compactMap(\.managerType).map(\.pluginIdentifier))
             .subtracting(excludedCGMs)
         #expect(missingCGMs.isEmpty, "Vendored CGMs absent from DeviceCatalog: \(missingCGMs.sorted())")
     }
