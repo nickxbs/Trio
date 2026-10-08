@@ -16,6 +16,7 @@ extension PumpConfig {
         @State private var booleanPlaceholder: Bool = false
         @State var showPumpSelection: Bool = false
         @State private var pendingPump: PumpCatalogEntry?
+        @State private var deviceToPair: DiscoveredHeartbeatDevice?
 
         @Environment(\.colorScheme) var colorScheme
         @Environment(AppState.self) var appState
@@ -149,6 +150,25 @@ extension PumpConfig {
                     showPumpSelection = false
                 }
             }
+            .alert(
+                "Pair Heartbeat Device",
+                isPresented: Binding(
+                    get: { deviceToPair != nil },
+                    set: { if !$0 { deviceToPair = nil } }
+                ),
+                presenting: deviceToPair
+            ) { device in
+                Button("Pair") {
+                    state.selectHeartbeatDevice(device)
+                    heartbeatManager.stopScanning()
+                    deviceToPair = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    deviceToPair = nil
+                }
+            } message: { device in
+                Text("Do you want to use \"\(device.name)\" (\(device.type.displayName)) as the virtual pump heartbeat device?")
+            }
         }
 
         private var virtualPumpHeartbeatSection: some View {
@@ -281,8 +301,8 @@ extension PumpConfig {
                     } else {
                         ForEach(heartbeatManager.discoveredDevices) { device in
                             Button {
-                                state.selectHeartbeatDevice(device)
-                                heartbeatManager.stopScanning()
+                                guard device.id != state.heartbeatDeviceAddress else { return }
+                                deviceToPair = device
                             } label: {
                                 HStack {
                                     Image(systemName: deviceIconName(device.type))
