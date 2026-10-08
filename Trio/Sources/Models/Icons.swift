@@ -3,7 +3,8 @@ import Foundation
 import UIKit
 
 enum Icon_: String, CaseIterable, Identifiable {
-    case primary = "trioBlack"
+    case primary = "trioTeal"
+    case trioBlack
     case trioWhiteShadow
     case trioColorBG
     case trioWhite
