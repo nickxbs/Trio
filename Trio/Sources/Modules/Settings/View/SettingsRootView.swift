@@ -223,12 +223,19 @@ extension Settings {
                                 }
                                 .padding(.top)
                                 .disabled(dosingModeDisabled)
+                                .onChange(of: state.dosingMode) { newMode in
+                                    if newMode != .mdi && !state.hasPump() {
+                                        state.dosingMode = .mdi
+                                    }
+                                }
 
                                 HStack(alignment: .center) {
                                     Text(
                                         dosingModeDisabled ?
-                                            String(localized: "Add a CGM and pump to enable automated insulin delivery") :
-                                            state.dosingMode.miniHint
+                                            String(localized: "Add a CGM to enable dosing modes") :
+                                            (!state.hasPump() && state.dosingMode != .mdi ?
+                                                String(localized: "Connect a pump for automated modes, or use MDI.") :
+                                                state.dosingMode.miniHint)
                                     )
                                     .font(.footnote)
                                     .foregroundColor(miniHintTextColor)
@@ -267,7 +274,10 @@ extension Settings {
                     .listRowBackground(Color.chart)
                     .settingsSearchTarget(label: String(localized: "Dosing Mode"))
                     .onAppear {
-                        dosingModeDisabled = !state.hasCgmAndPump()
+                        dosingModeDisabled = !state.hasCgm()
+                        if !state.hasPump() && state.dosingMode != .mdi {
+                            state.dosingMode = .mdi
+                        }
                     }
 
                     Section(

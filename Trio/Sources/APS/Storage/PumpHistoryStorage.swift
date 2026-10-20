@@ -16,6 +16,8 @@ protocol PumpHistoryStorage {
     /// so the caller can delete the now-withdrawn treatments remotely.
     @discardableResult func storePumpEvents(_ events: [NewPumpEvent], replacePendingEvents: Bool) async throws -> [String]
     func storeExternalInsulinEvent(amount: Decimal, timestamp: Date) async
+    func storeBasalBolusEvent(amount: Decimal, timestamp: Date) async
+    func fetchLastBasalBolus() async -> (amount: Decimal, timestamp: Date)?
     func getPumpHistoryNotYetUploadedToNightscout() async throws -> [NightscoutTreatment]
     func getPumpHistoryNotYetUploadedToHealth() async throws -> [PumpHistoryEvent]
     func getPumpHistoryNotYetUploadedToTidepool() async throws -> [PumpHistoryEvent]
@@ -334,6 +336,63 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
         }
     }
 
+    func storeBasalBolusEvent(amount: Decimal, timestamp: Date) async {
+        let context = makeContext()
+        context.name = "storeBasalBolusEvent"
+        context.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy
+        await context.perform {
+            let newPumpEvent = PumpEventStored(context: context)
+            let identifier = UUID().uuidString
+            newPumpEvent.id = identifier
+            newPumpEvent.syncIdentifier = identifier
+            newPumpEvent.isMutable = false
+            newPumpEvent.timestamp = timestamp > Date() ? Date() : timestamp
+            newPumpEvent.type = EventType.basalBolus.rawValue
+            newPumpEvent.isUploadedToNS = false
+            newPumpEvent.isUploadedToHealth = false
+            newPumpEvent.isUploadedToTidepool = false
+
+            let newBolusEntry = BolusStored(context: context)
+            newBolusEntry.pumpEvent = newPumpEvent
+            newBolusEntry.amount = amount as NSDecimalNumber
+            newBolusEntry.programmedAmount = amount as NSDecimalNumber
+            newBolusEntry.isExternal = true
+            newBolusEntry.isSMB = false
+
+            do {
+                guard context.hasChanges else { return }
+                try context.save()
+                debug(.coreData, "Basal bolus saved: \(amount) U")
+                self.updateSubject.send(())
+            } catch {
+                debug(.coreData, "Failed to store basal bolus in context: \(error)")
+            }
+        }
+    }
+
+    func fetchLastBasalBolus() async -> (amount: Decimal, timestamp: Date)? {
+        let context = makeContext()
+        context.name = "fetchLastBasalBolus"
+        let request: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
+        request.predicate = NSPredicate(format: "type == %@", EventType.basalBolus.rawValue)
+        request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+        request.fetchLimit = 1
+
+        return await context.perform {
+            do {
+                let results = try context.fetch(request)
+                if let event = results.first,
+                   let date = event.timestamp,
+                   let amount = event.bolus?.amount as Decimal? {
+                    return (amount, date)
+                }
+            } catch {
+                debug(.coreData, "Failed to fetch last basal bolus: \(error)")
+            }
+            return nil
+        }
+    }
+
     func getPumpHistory() async throws -> [PumpHistoryEvent] {
         let context = makeContext()
         context.name = "getPumpHistory"
@@ -389,6 +448,9 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     }
 
     func determineBolusEventType(for event: PumpEventStored) -> PumpEventStored.EventType {
+        if event.type == EventType.basalBolus.rawValue {
+            return .basalBolus
+        }
         guard let bolus = event.bolus else {
             return event.type.flatMap({ PumpEventStored.EventType(rawValue: $0) }) ?? .bolus
         }
@@ -420,6 +482,26 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
             return fetchedPumpEvents.map { event in
                 switch event.type {
+                case EventType.basalBolus.rawValue:
+                    return NightscoutTreatment(
+                        duration: nil,
+                        rawDuration: nil,
+                        rawRate: nil,
+                        absolute: nil,
+                        rate: nil,
+                        eventType: .basalBolus,
+                        createdAt: event.timestamp,
+                        enteredBy: NightscoutTreatment.local,
+                        bolus: nil,
+                        insulin: event.bolus?.amount as Decimal?,
+                        notes: "MDI Basal",
+                        carbs: nil,
+                        fat: nil,
+                        protein: nil,
+                        targetTop: nil,
+                        targetBottom: nil,
+                        id: event.id
+                    )
                 case PumpEvent.bolus.rawValue:
                     // eventType determines whether bolus is external, smb or manual (=administered via app by user)
                     let eventType = determineBolusEventType(for: event)
@@ -584,6 +666,15 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
             return fetchedPumpEvents.map { event in
                 switch event.type {
+                case EventType.basalBolus.rawValue:
+                    return PumpHistoryEvent(
+                        id: event.id ?? UUID().uuidString,
+                        type: .basalBolus,
+                        timestamp: event.timestamp ?? Date(),
+                        amount: event.bolus?.amount as Decimal?,
+                        isExternal: true,
+                        insulinType: event.insulinType
+                    )
                 case PumpEvent.bolus.rawValue:
                     return PumpHistoryEvent(
                         id: event.id ?? UUID().uuidString,

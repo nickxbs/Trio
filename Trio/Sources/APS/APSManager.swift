@@ -306,7 +306,7 @@ final class BaseAPSManager: APSManager, Injectable {
             // not set")` and surface a modal banner on top of the pod
             // activation sheet, closing the sheet (reported by tester during
             // O5 pairing).
-            guard self.pumpManager != nil else {
+            guard self.pumpManager != nil || self.settings.dosingMode == .mdi else {
                 debug(.apsManager, "No pump manager — skipping loop attempt")
                 return
             }

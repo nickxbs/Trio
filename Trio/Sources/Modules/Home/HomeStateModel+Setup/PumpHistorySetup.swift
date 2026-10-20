@@ -57,4 +57,25 @@ extension Home.StateModel {
     @MainActor private func updateLastBolusFromController() {
         lastPumpBolus = lastBolusController.fetchedObjects?.first
     }
+
+    // MARK: - Last Basal Bolus (MDI)
+
+    @MainActor func setupLastBasalBolusController() {
+        lastBasalBolusControllerDelegate.onContentChange = { [weak self] in
+            Task { @MainActor in
+                self?.updateLastBasalBolusFromController()
+            }
+        }
+
+        do {
+            try lastBasalBolusController.performFetch()
+            updateLastBasalBolusFromController()
+        } catch {
+            debug(.default, "\(DebuggingIdentifiers.failed) Failed to perform last basal bolus fetch: \(error)")
+        }
+    }
+
+    @MainActor private func updateLastBasalBolusFromController() {
+        lastBasalBolus = lastBasalBolusController.fetchedObjects?.first
+    }
 }

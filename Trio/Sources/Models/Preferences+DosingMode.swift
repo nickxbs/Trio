@@ -8,7 +8,8 @@ extension Preferences {
 
         switch mode {
         case .closed,
-             .open:
+             .open,
+             .mdi:
             return self
 
         case .lowGlucoseSuspend:

@@ -78,10 +78,16 @@ extension Settings {
 //            let storageURL = localDocuments.appendingPathComponent("PumpManagerState" + ".plist")
 //            try? FileManager.default.removeItem(at: storageURL)
 //        }
+        func hasCgm() -> Bool {
+            fetchCgmManager.cgmGlucoseSourceType != .none
+        }
+
+        func hasPump() -> Bool {
+            provider.deviceManager.pumpManager != nil
+        }
+
         func hasCgmAndPump() -> Bool {
-            let hasCgm = fetchCgmManager.cgmGlucoseSourceType != .none
-            let hasPump = provider.deviceManager.pumpManager != nil
-            return hasCgm && hasPump
+            hasCgm() && hasPump()
         }
     }
 }

@@ -295,26 +295,67 @@ extension Home.RootView {
     }
 
     @ViewBuilder func noActiveAdjustmentsView() -> some View {
-        Group {
-            adjustmentIcon("slider.horizontal.2.gobackward", tint: Color.secondary)
+        if state.dosingMode == .mdi {
+            Button {
+                showBasalBolusSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    adjustmentIcon("syringe", tint: Color.insulin)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text("No Active Adjustment")
-                    .font(.subheadline).fontWeight(.medium)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text("Profile at 100 %")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 1) {
+                        if let last = state.lastBasalBolus,
+                           let amount = last.bolus?.amount as Decimal?,
+                           let date = last.timestamp {
+                            Text(String(localized: "MDI Basal: \(amount.formatted()) U"))
+                                .font(.subheadline).fontWeight(.medium)
+                                .foregroundStyle(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Text(String(localized: "Last: \(TimeAgoFormatter.minutesAgo(from: date))"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text(String(localized: "Log MDI Basal"))
+                                .font(.subheadline).fontWeight(.medium)
+                                .foregroundStyle(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Text(String(localized: "Tap to record basal injection"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Color.insulin)
+                }
             }
+            .buttonStyle(.plain)
+        } else {
+            Group {
+                adjustmentIcon("slider.horizontal.2.gobackward", tint: Color.secondary)
 
-            Spacer()
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("No Active Adjustment")
+                        .font(.subheadline).fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Profile at 100 %")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
-            // clear icon keeps text aligned with the cancel-button states
-            Image(systemName: "xmark.app")
-                .font(.title)
-                .foregroundStyle(Color.clear)
+                Spacer()
+
+                // clear icon keeps text aligned with the cancel-button states
+                Image(systemName: "xmark.app")
+                    .font(.title)
+                    .foregroundStyle(Color.clear)
+            }
         }
     }
 

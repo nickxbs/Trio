@@ -157,6 +157,8 @@ struct LoopStatusView: View {
             return String(localized: "Trio may only lower your basal. It will not correct a high.")
         case .basalTesting:
             return String(localized: "Trio leaves your basal alone unless your glucose goes low.")
+        case .mdi:
+            return String(localized: "Trio is in manual MDI mode with bolused basal.")
         }
     }
 

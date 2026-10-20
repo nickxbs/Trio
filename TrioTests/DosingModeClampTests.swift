@@ -14,9 +14,9 @@ import Testing
         return preferences
     }
 
-    @Test("Closed and open loop see the user's own preferences") func unclampedModes() {
+    @Test("Closed, open loop and MDI see the user's own preferences") func unclampedModes() {
         let preferences = userPreferences()
-        for mode in [DosingMode.closed, .open] {
+        for mode in [DosingMode.closed, .open, .mdi] {
             #expect(preferences.clamped(for: mode) == preferences)
         }
     }

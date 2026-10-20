@@ -175,7 +175,11 @@ extension PumpEventStored {
     }
 
     private func toBolusPumpHistoryEvent() -> PumpHistoryEvent? {
-        guard let timestamp = timestamp, let bolus = bolus, let amount = bolus.amount else {
+        guard let timestamp = timestamp,
+              let bolus = bolus,
+              let amount = bolus.amount,
+              type != EventType.basalBolus.rawValue
+        else {
             return nil
         }
         return PumpHistoryEvent(

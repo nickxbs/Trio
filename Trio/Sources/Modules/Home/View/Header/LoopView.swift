@@ -73,7 +73,10 @@ struct LoopView: View {
     }
 
     private var centerSymbol: String? {
-        manualTempBasal ? nil : Self.centerSymbol(automation: dosingMode.automation)
+        if dosingMode == .mdi {
+            return "syringe"
+        }
+        return manualTempBasal ? nil : Self.centerSymbol(automation: dosingMode.automation)
     }
 
     /// Newest sign of life from either device, which is what freshness means when nothing is enacted.

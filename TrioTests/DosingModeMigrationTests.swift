@@ -35,6 +35,7 @@ import Testing
 
     @Test("Automation level reflects what each mode may do") func automationLevels() {
         #expect(DosingMode.open.automation == .off)
+        #expect(DosingMode.mdi.automation == .off)
         #expect(DosingMode.basalTesting.automation == .hypoSuspendOnly)
         #expect(DosingMode.lowGlucoseSuspend.automation == .reductionsOnly)
         #expect(DosingMode.closed.automation == .full)
@@ -63,6 +64,7 @@ import Testing
         #expect(DosingMode.open.rawValue == "open")
         #expect(DosingMode.lowGlucoseSuspend.rawValue == "lowGlucoseSuspend")
         #expect(DosingMode.basalTesting.rawValue == "basalTesting")
+        #expect(DosingMode.mdi.rawValue == "mdi")
     }
 
     @Test("Devicestatus carries the mode and drops enacted only in open loop") func deviceStatusPayload() throws {

@@ -34,6 +34,7 @@ extension Home {
         @State var pendingCGM: CGMCatalogEntry?
         @State var showSnoozeSheet: Bool = false
         @State var showManualGlucose: Bool = false
+        @State var showBasalBolusSheet: Bool = false
         @State var showReleaseNotes: Bool = false
         @State var alarmsSnoozeUntil: Date = .distantPast
         @ObservedObject var releaseNotesService = ReleaseNotesService.shared
@@ -102,22 +103,30 @@ extension Home {
                     .offset(x: 0, y: -18)
             }
             .overlay(alignment: .topTrailing) {
-                // borderless capsule (not a control); centered in the basal
+                // borderless capsule (not a control in pump modes); opens entry sheet in MDI mode; centered in the basal
                 // pane band so it clears the y-axis labels on every device size
                 if let basal = currentBasalReadout {
-                    HStack(spacing: 3) {
-                        if basal.isManual {
-                            Image(systemName: "hand.raised.fill")
-                                .font(.system(size: 11, weight: .semibold))
+                    Button {
+                        if state.dosingMode == .mdi {
+                            showBasalBolusSheet = true
                         }
-                        Text(basal.label)
-                            .font(.system(size: 14, weight: .semibold))
-                            .fontDesign(.rounded)
+                    } label: {
+                        HStack(spacing: 3) {
+                            if basal.isManual {
+                                Image(systemName: "hand.raised.fill")
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
+                            Text(basal.label)
+                                .font(.system(size: 14, weight: .semibold))
+                                .fontDesign(.rounded)
+                        }
+                        .foregroundStyle(basal.isManual ? Color.loopManualTemp : Color.insulin)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .glassMaterialFill(Capsule())
                     }
-                    .foregroundStyle(basal.isManual ? Color.loopManualTemp : Color.insulin)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .glassMaterialFill(Capsule())
+                    .buttonStyle(.plain)
+                    .disabled(state.dosingMode != .mdi)
                     .frame(height: chartHeight * 0.10)
                     .padding(.trailing, 16)
                     .accessibilityElement(children: .ignore)
@@ -126,8 +135,23 @@ extension Home {
             }
         }
 
-        /// Rate pill: what the pump delivers, and whether the temp is the user's own.
+        /// Rate pill: what the pump delivers, or the last basal bolus in MDI mode.
         private var currentBasalReadout: (label: String, accessibilityLabel: String, isManual: Bool)? {
+            if state.dosingMode == .mdi {
+                if let last = state.lastBasalBolus,
+                   let amount = last.bolus?.amount as Decimal?,
+                   let date = last.timestamp {
+                    let time = date.formatted(date: .omitted, time: .shortened)
+                    let label = "💉 \(amount.formatted()) U (\(time))"
+                    let spoken = "MDI Basal \(amount.formatted()) Units at \(time)"
+                    return (label, spoken, false)
+                } else {
+                    let label = String(localized: "💉 + Basal")
+                    let spoken = String(localized: "Record MDI Basal")
+                    return (label, spoken, false)
+                }
+            }
+
             switch state.activeBasalDelivery {
             case .none:
                 return nil
@@ -300,6 +324,24 @@ extension Home {
             .sheet(isPresented: $showManualGlucose) {
                 ManualGlucoseEntryView(units: state.units, isPresented: $showManualGlucose) { amount in
                     state.addManualGlucose(amount)
+                }
+            }
+            .sheet(isPresented: $showBasalBolusSheet) {
+                let lastBasalTuple: (amount: Decimal, timestamp: Date)? = {
+                    if let last = state.lastBasalBolus,
+                       let amount = last.bolus?.amount as Decimal?,
+                       let date = last.timestamp {
+                        return (amount, date)
+                    }
+                    return nil
+                }()
+                BasalBolusEntryView(
+                    isPresented: $showBasalBolusSheet,
+                    lastBasal: lastBasalTuple
+                ) { amount, date in
+                    Task {
+                        await state.storeBasalBolus(amount: amount, timestamp: date)
+                    }
                 }
             }
             // DEVICE SELECTION (pump + CGM)

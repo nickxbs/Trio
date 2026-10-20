@@ -161,6 +161,35 @@ import Testing
         ])
     }
 
+    @Test("Basal bolus is excluded from algorithm rapid bolus history") func testBasalBolusExclusion() async throws {
+        let basalBolusId = try await testContext.perform {
+            let event = PumpEventStored(context: self.testContext)
+            event.id = self.uuid(10)
+            event.timestamp = self.fixedDate(0)
+            event.type = PumpEventStored.EventType.basalBolus.rawValue
+
+            let bolus = BolusStored(context: self.testContext)
+            bolus.amount = NSDecimalNumber(value: 20.0)
+            bolus.isSMB = false
+            bolus.isExternal = true
+            bolus.pumpEvent = event
+
+            try self.testContext.save()
+            return event.objectID
+        }
+
+        let regularBolusId = try await insertBolus(id: uuid(11), date: fixedDate(1), amount: 3.0, isSMB: false, isExternal: false)
+
+        let events = await testContext.perform {
+            OpenAPS.nativePumpHistory([basalBolusId, regularBolusId], orphanedResumes: [], from: self.testContext)
+        }
+
+        // Only the regular bolus should map into algorithm pump history; basal bolus must be omitted so rapid IOB is unaffected.
+        #expect(events.count == 1)
+        #expect(events.first?.id == self.uuid(11))
+        #expect(events.first?.type == .bolus)
+    }
+
     @Test("Empty history maps to an empty array") func testEmpty() async throws {
         try await assertNativeMatchesGolden([], golden: [])
     }

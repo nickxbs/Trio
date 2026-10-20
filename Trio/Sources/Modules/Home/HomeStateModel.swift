@@ -30,6 +30,7 @@ extension Home {
         @ObservationIgnored @Injected() var iobService: IOBService!
         @ObservationIgnored @Injected() var fileStorage: FileStorage!
         @ObservationIgnored @Injected() var unlockmanager: UnlockManager!
+        @ObservationIgnored @Injected() var pumpHistoryStorage: PumpHistoryStorage!
 
         var cgmStateModel: CGMSettings.StateModel {
             CGMSettings.StateModel.shared
@@ -109,6 +110,7 @@ extension Home {
         var batteryFromPersistence: [OpenAPS_Battery] = []
         var bolusStatus: BolusStatus = .noBolus
         var lastPumpBolus: PumpEventStored?
+        var lastBasalBolus: PumpEventStored?
         var overrides: [OverrideStored] = []
         var overrideRunStored: [OverrideRunStored] = []
         var tempTargetStored: [TempTargetStored] = []
@@ -311,6 +313,22 @@ extension Home {
             return controller
         }()
 
+        @ObservationIgnored let lastBasalBolusControllerDelegate = FetchedResultsControllerDelegate()
+        @ObservationIgnored private(set) lazy var lastBasalBolusController: NSFetchedResultsController<PumpEventStored> = {
+            let request = NSFetchRequest<PumpEventStored>(entityName: "PumpEventStored")
+            request.sortDescriptors = [NSSortDescriptor(keyPath: \PumpEventStored.timestamp, ascending: false)]
+            request.predicate = NSPredicate(format: "type == %@", EventType.basalBolus.rawValue)
+            request.fetchLimit = 1
+            let controller = NSFetchedResultsController(
+                fetchRequest: request,
+                managedObjectContext: viewContext,
+                sectionNameKeyPath: nil,
+                cacheName: nil
+            )
+            controller.delegate = lastBasalBolusControllerDelegate
+            return controller
+        }()
+
         @ObservationIgnored let overrideControllerDelegate = FetchedResultsControllerDelegate()
         @ObservationIgnored private(set) lazy var overrideController: NSFetchedResultsController<OverrideStored> = {
             let request = NSFetchRequest<OverrideStored>(entityName: "OverrideStored")
@@ -487,6 +505,7 @@ extension Home {
                 await self.setupDeterminationController()
                 await self.setupInsulinController()
                 await self.setupLastBolusController()
+                await self.setupLastBasalBolusController()
                 await self.setupOverrideController()
                 await self.setupOverrideRunController()
                 await self.setupTempTargetController()
@@ -1066,6 +1085,10 @@ extension Home.StateModel:
         displayPumpStatusHighlightMessage(true)
         displayPumpStatusBadge(true)
         batteryFromPersistence = []
+    }
+
+    func storeBasalBolus(amount: Decimal, timestamp: Date) async {
+        await pumpHistoryStorage.storeBasalBolusEvent(amount: amount, timestamp: timestamp)
     }
 }
 

@@ -19,6 +19,7 @@ enum DosingMode: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
     case open
     case lowGlucoseSuspend
     case basalTesting
+    case mdi
 
     /// Only `closed` is automated insulin delivery in the full sense; the constrained modes
     /// can take insulin away but never add it, because Max IOB is clamped to 0.
@@ -26,7 +27,8 @@ enum DosingMode: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
         switch self {
         case .closed:
             return .full
-        case .open:
+        case .open,
+             .mdi:
             return .off
         case .lowGlucoseSuspend:
             return .reductionsOnly
@@ -48,6 +50,8 @@ enum DosingMode: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
             return String(localized: "Low Glucose Suspend", comment: "Dosing mode")
         case .basalTesting:
             return String(localized: "Basal Testing", comment: "Dosing mode")
+        case .mdi:
+            return String(localized: "MDI", comment: "Dosing mode")
         }
     }
 
@@ -61,6 +65,8 @@ enum DosingMode: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
             return String(localized: "Trio may only lower basal insulin. It will not correct highs.")
         case .basalTesting:
             return String(localized: "Trio steps in only if your glucose goes low.")
+        case .mdi:
+            return String(localized: "Trio is in manual MDI mode with bolused basal.")
         }
     }
 
@@ -75,6 +81,8 @@ enum DosingMode: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
             return "hand.raised.fill"
         case .basalTesting:
             return "waveform"
+        case .mdi:
+            return "syringe"
         }
     }
 
@@ -95,6 +103,10 @@ enum DosingMode: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
         case .basalTesting:
             return String(
                 localized: "Use this to check whether your basal rates hold you steady. Trio makes no changes unless your glucose goes low. Then it stops your basal until you come back up.\nTrio also stops adjusting for sensitivity, so you see your own settings at work. Turning this on cancels any temp basal Trio set. Use it for short, planned times."
+            )
+        case .mdi:
+            return String(
+                localized: "Trio is running in manual MDI mode. Continuous pump basal is replaced by manual basal boluses. Trio never automatically changes your insulin and will not stop a low or fix a high for you."
             )
         }
     }
