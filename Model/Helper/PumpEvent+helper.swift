@@ -45,6 +45,7 @@ public extension PumpEventStored {
         case bolus = "Bolus"
         case smb = "SMB"
         case isExternal = "External Insulin"
+        case basalBolus = "Basal Bolus"
         case mealBolus = "Meal Bolus"
         case correctionBolus = "Correction Bolus"
         case snackBolus = "Snack Bolus"

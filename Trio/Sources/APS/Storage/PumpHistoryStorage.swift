@@ -347,7 +347,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
             newPumpEvent.syncIdentifier = identifier
             newPumpEvent.isMutable = false
             newPumpEvent.timestamp = timestamp > Date() ? Date() : timestamp
-            newPumpEvent.type = EventType.basalBolus.rawValue
+            newPumpEvent.type = PumpEvent.basalBolus.rawValue
             newPumpEvent.isUploadedToNS = false
             newPumpEvent.isUploadedToHealth = false
             newPumpEvent.isUploadedToTidepool = false
@@ -374,7 +374,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
         let context = makeContext()
         context.name = "fetchLastBasalBolus"
         let request: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
-        request.predicate = NSPredicate(format: "type == %@", EventType.basalBolus.rawValue)
+        request.predicate = NSPredicate(format: "type == %@", PumpEvent.basalBolus.rawValue)
         request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
         request.fetchLimit = 1
 
@@ -448,7 +448,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     }
 
     func determineBolusEventType(for event: PumpEventStored) -> PumpEventStored.EventType {
-        if event.type == EventType.basalBolus.rawValue {
+        if event.type == PumpEvent.basalBolus.rawValue {
             return .basalBolus
         }
         guard let bolus = event.bolus else {
@@ -482,7 +482,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
             return fetchedPumpEvents.map { event in
                 switch event.type {
-                case EventType.basalBolus.rawValue:
+                case PumpEvent.basalBolus.rawValue:
                     return NightscoutTreatment(
                         duration: nil,
                         rawDuration: nil,
@@ -666,7 +666,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
             return fetchedPumpEvents.map { event in
                 switch event.type {
-                case EventType.basalBolus.rawValue:
+                case PumpEvent.basalBolus.rawValue:
                     return PumpHistoryEvent(
                         id: event.id ?? UUID().uuidString,
                         type: .basalBolus,
