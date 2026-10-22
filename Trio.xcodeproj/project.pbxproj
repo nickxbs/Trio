@@ -753,6 +753,7 @@
 		DD1745262C55526F00211FAC /* SMBSettingsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1745252C55526F00211FAC /* SMBSettingsRootView.swift */; };
 		DD1745292C55642100211FAC /* SettingInputSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1745282C55642100211FAC /* SettingInputSection.swift */; };
 		DD1745292C55642100211FAD /* DosingModeOverrideNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1745282C55642100211FAD /* DosingModeOverrideNote.swift */; };
+		DD1745292C55642100211FAE /* BasalBolusEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1745282C55642100211FAE /* BasalBolusEntryView.swift */; };
 		DD17452B2C556E8100211FAC /* SettingInputHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD17452A2C556E8100211FAC /* SettingInputHintView.swift */; };
 		DD17452E2C55AE4800211FAC /* TargetBehavoirDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD17452D2C55AE4800211FAC /* TargetBehavoirDataFlow.swift */; };
 		DD1745302C55AE5300211FAC /* TargetBehaviorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD17452F2C55AE5300211FAC /* TargetBehaviorProvider.swift */; };
@@ -1846,6 +1847,7 @@
 		DD1745252C55526F00211FAC /* SMBSettingsRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMBSettingsRootView.swift; sourceTree = "<group>"; };
 		DD1745282C55642100211FAC /* SettingInputSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingInputSection.swift; sourceTree = "<group>"; };
 		DD1745282C55642100211FAD /* DosingModeOverrideNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DosingModeOverrideNote.swift; sourceTree = "<group>"; };
+		DD1745282C55642100211FAE /* BasalBolusEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasalBolusEntryView.swift; sourceTree = "<group>"; };
 		DD17452A2C556E8100211FAC /* SettingInputHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingInputHintView.swift; sourceTree = "<group>"; };
 		DD17452D2C55AE4800211FAC /* TargetBehavoirDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetBehavoirDataFlow.swift; sourceTree = "<group>"; };
 		DD17452F2C55AE5300211FAC /* TargetBehaviorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetBehaviorProvider.swift; sourceTree = "<group>"; };
@@ -2872,6 +2874,7 @@
 				DD88C8E12C50420800F2D558 /* DefinitionRow.swift */,
 				DD1745282C55642100211FAC /* SettingInputSection.swift */,
 				DD1745282C55642100211FAD /* DosingModeOverrideNote.swift */,
+				DD1745282C55642100211FAE /* BasalBolusEntryView.swift */,
 				48B83503461B4F8D97B30115 /* SettingsSearchHighlight.swift */,
 				DD17452A2C556E8100211FAC /* SettingInputHintView.swift */,
 				DD500A712807000000000100 /* SnoozeAlertsSheetView.swift */,
@@ -5866,6 +5869,7 @@
 				D6D02515BBFBE64FEBE89856 /* HistoryRootView.swift in Sources */,
 				DD1745292C55642100211FAC /* SettingInputSection.swift in Sources */,
 				DD1745292C55642100211FAD /* DosingModeOverrideNote.swift in Sources */,
+				DD1745292C55642100211FAE /* BasalBolusEntryView.swift in Sources */,
 				38569349270B5DFB0002C50D /* AppGroupSource.swift in Sources */,
 				3B5CD2A12D4AEA5100CE213C /* JavascriptOptional.swift in Sources */,
 				F5CA3DB1F9DC8B05792BBFAA /* CGMSettingsDataFlow.swift in Sources */,

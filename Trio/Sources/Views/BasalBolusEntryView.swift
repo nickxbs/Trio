@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Manual MDI basal bolus entry sheet; allows recording a long-acting insulin dose
 /// directly from the Home screen or Treatments.
