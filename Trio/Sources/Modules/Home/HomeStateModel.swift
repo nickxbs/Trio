@@ -1087,8 +1087,8 @@ extension Home.StateModel:
         batteryFromPersistence = []
     }
 
-    func storeBasalBolus(amount: Decimal, timestamp: Date) async {
-        await pumpHistoryStorage.storeBasalBolusEvent(amount: amount, timestamp: timestamp)
+    func storeBasalBolus(amount: Decimal, timestamp: Date, insulinType: String? = nil) async {
+        await pumpHistoryStorage.storeBasalBolusEvent(amount: amount, timestamp: timestamp, insulinType: insulinType)
     }
 }
 

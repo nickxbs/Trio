@@ -306,7 +306,8 @@ extension Home.RootView {
                         if let last = state.lastBasalBolus,
                            let amount = last.bolus?.amount as Decimal?,
                            let date = last.timestamp {
-                            Text(String(localized: "MDI Basal: \(amount.formatted()) U"))
+                            let insulinName = last.insulinType ?? "Basal"
+                            Text(String(localized: "MDI \(insulinName): \(amount.formatted()) U"))
                                 .font(.subheadline).fontWeight(.medium)
                                 .foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity, alignment: .leading)

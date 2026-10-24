@@ -1084,7 +1084,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     /// True when the stored row still matches the values that were sent to NS.
     static func uploadStillCurrent(_ event: PumpEventStored, _ treatment: NightscoutTreatment) -> Bool {
         switch event.type {
-        case PumpEventStored.EventType.bolus.rawValue:
+        case PumpEventStored.EventType.bolus.rawValue,
+             PumpEventStored.EventType.basalBolus.rawValue:
             return treatment.insulin == event.bolus?.amount as Decimal?
         case PumpEventStored.EventType.tempBasal.rawValue:
             return treatment.rate == event.tempBasal?.rate as Decimal?

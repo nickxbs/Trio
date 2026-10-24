@@ -141,9 +141,10 @@ extension Home {
                 if let last = state.lastBasalBolus,
                    let amount = last.bolus?.amount as Decimal?,
                    let date = last.timestamp {
+                    let insulinName = last.insulinType ?? "Basal"
                     let time = date.formatted(date: .omitted, time: .shortened)
                     let label = "💉 \(amount.formatted()) U (\(time))"
-                    let spoken = "MDI Basal \(amount.formatted()) Units at \(time)"
+                    let spoken = "MDI \(insulinName) \(amount.formatted()) Units at \(time)"
                     return (label, spoken, false)
                 } else {
                     let label = String(localized: "💉 + Basal")
@@ -327,20 +328,20 @@ extension Home {
                 }
             }
             .sheet(isPresented: $showBasalBolusSheet) {
-                let lastBasalTuple: (amount: Decimal, timestamp: Date)? = {
+                let lastBasalTuple: (amount: Decimal, timestamp: Date, insulin: String?)? = {
                     if let last = state.lastBasalBolus,
                        let amount = last.bolus?.amount as Decimal?,
                        let date = last.timestamp {
-                        return (amount, date)
+                        return (amount, date, last.insulinType)
                     }
                     return nil
                 }()
                 BasalBolusEntryView(
                     isPresented: $showBasalBolusSheet,
                     lastBasal: lastBasalTuple
-                ) { amount, date in
+                ) { amount, date, insulin in
                     Task {
-                        await state.storeBasalBolus(amount: amount, timestamp: date)
+                        await state.storeBasalBolus(amount: amount, timestamp: date, insulinType: insulin)
                     }
                 }
             }

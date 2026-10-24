@@ -350,4 +350,47 @@ import Testing
         #expect(finalEntries.first?.type == PumpEvent.pumpSuspend.rawValue)
         #expect(finalEntries.last?.type == PumpEvent.pumpResume.rawValue)
     }
+
+    @Test("Basal bolus is uploaded to Nightscout as an Announcement with insulin note")
+    func testBasalBolusAnnouncementTreatmentForNightscout() async throws {
+        let timestamp = Date()
+        let amount: Decimal = 15.5
+        let insulin = "Lantus"
+
+        await storage.storeBasalBolusEvent(amount: amount, timestamp: timestamp, insulinType: insulin)
+
+        // Verify CoreData persistence
+        let lastBasal = await storage.fetchLastBasalBolus()
+        #expect(lastBasal != nil)
+        #expect(lastBasal?.amount == amount)
+        #expect(lastBasal?.insulin == insulin)
+
+        // Verify Nightscout treatment formatting
+        let treatments = try await storage.getPumpHistoryNotYetUploadedToNightscout()
+        let basalTreatment = treatments.first { $0.eventType == .nsAnnouncement }
+
+        #expect(basalTreatment != nil, "Basal bolus must produce an Announcement treatment for Nightscout")
+        #expect(basalTreatment?.eventType.rawValue == "Announcement")
+        #expect(basalTreatment?.notes == "Lantus 15.5")
+        #expect(basalTreatment?.insulin == amount)
+    }
+
+    @Test("Basal bolus with Tresiba produces correct Announcement format")
+    func testBasalBolusTresibaAnnouncement() async throws {
+        let timestamp = Date()
+        let amount: Decimal = 20
+        let insulin = "Tresiba"
+
+        await storage.storeBasalBolusEvent(amount: amount, timestamp: timestamp, insulinType: insulin)
+
+        let treatments = try await storage.getPumpHistoryNotYetUploadedToNightscout()
+        let basalTreatment = treatments.first { $0.notes?.contains("Tresiba") == true }
+
+        #expect(basalTreatment != nil)
+        #expect(basalTreatment?.eventType == .nsAnnouncement)
+        #expect(basalTreatment?.eventType.rawValue == "Announcement")
+        #expect(basalTreatment?.notes == "Tresiba 20")
+        #expect(basalTreatment?.insulin == amount)
+    }
 }
+

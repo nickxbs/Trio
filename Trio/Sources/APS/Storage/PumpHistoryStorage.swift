@@ -16,11 +16,17 @@ protocol PumpHistoryStorage {
     /// so the caller can delete the now-withdrawn treatments remotely.
     @discardableResult func storePumpEvents(_ events: [NewPumpEvent], replacePendingEvents: Bool) async throws -> [String]
     func storeExternalInsulinEvent(amount: Decimal, timestamp: Date) async
-    func storeBasalBolusEvent(amount: Decimal, timestamp: Date) async
-    func fetchLastBasalBolus() async -> (amount: Decimal, timestamp: Date)?
+    func storeBasalBolusEvent(amount: Decimal, timestamp: Date, insulinType: String?) async
+    func fetchLastBasalBolus() async -> (amount: Decimal, timestamp: Date, insulin: String?)?
     func getPumpHistoryNotYetUploadedToNightscout() async throws -> [NightscoutTreatment]
     func getPumpHistoryNotYetUploadedToHealth() async throws -> [PumpHistoryEvent]
     func getPumpHistoryNotYetUploadedToTidepool() async throws -> [PumpHistoryEvent]
+}
+
+extension PumpHistoryStorage {
+    func storeBasalBolusEvent(amount: Decimal, timestamp: Date) async {
+        await storeBasalBolusEvent(amount: amount, timestamp: timestamp, insulinType: nil)
+    }
 }
 
 final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
@@ -336,7 +342,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
         }
     }
 
-    func storeBasalBolusEvent(amount: Decimal, timestamp: Date) async {
+    func storeBasalBolusEvent(amount: Decimal, timestamp: Date, insulinType: String? = nil) async {
         let context = makeContext()
         context.name = "storeBasalBolusEvent"
         context.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy
@@ -352,6 +358,17 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
             newPumpEvent.isUploadedToHealth = false
             newPumpEvent.isUploadedToTidepool = false
 
+            let insulinName = insulinType?.nonEmpty ?? "Lantus"
+            newPumpEvent.insulinType = insulinName
+
+            let formatter = NumberFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.numberStyle = .decimal
+            formatter.maximumFractionDigits = 2
+            formatter.minimumFractionDigits = 0
+            let formattedAmount = formatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
+            newPumpEvent.note = "\(insulinName) \(formattedAmount)"
+
             let newBolusEntry = BolusStored(context: context)
             newBolusEntry.pumpEvent = newPumpEvent
             newBolusEntry.amount = amount as NSDecimalNumber
@@ -362,7 +379,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
             do {
                 guard context.hasChanges else { return }
                 try context.save()
-                debug(.coreData, "Basal bolus saved: \(amount) U")
+                debug(.coreData, "Basal bolus saved: \(amount) U (\(insulinName))")
                 self.updateSubject.send(())
             } catch {
                 debug(.coreData, "Failed to store basal bolus in context: \(error)")
@@ -370,7 +387,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
         }
     }
 
-    func fetchLastBasalBolus() async -> (amount: Decimal, timestamp: Date)? {
+    func fetchLastBasalBolus() async -> (amount: Decimal, timestamp: Date, insulin: String?)? {
         let context = makeContext()
         context.name = "fetchLastBasalBolus"
         let request: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
@@ -384,7 +401,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                 if let event = results.first,
                    let date = event.timestamp,
                    let amount = event.bolus?.amount as Decimal? {
-                    return (amount, date)
+                    return (amount, date, event.insulinType)
                 }
             } catch {
                 debug(.coreData, "Failed to fetch last basal bolus: \(error)")
@@ -483,18 +500,35 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
             return fetchedPumpEvents.map { event in
                 switch event.type {
                 case PumpEvent.basalBolus.rawValue:
+                    let insulinName = event.insulinType?.nonEmpty ?? "Lantus"
+                    let amountValue = event.bolus?.amount as Decimal?
+                    let formattedAmount: String = {
+                        guard let amountValue else { return "" }
+                        let formatter = NumberFormatter()
+                        formatter.locale = Locale(identifier: "en_US_POSIX")
+                        formatter.numberStyle = .decimal
+                        formatter.maximumFractionDigits = 2
+                        formatter.minimumFractionDigits = 0
+                        return formatter.string(from: amountValue as NSDecimalNumber) ?? "\(amountValue)"
+                    }()
+                    let noteText: String = {
+                        if let existingNote = event.note, !existingNote.isEmpty, existingNote != "MDI Basal" {
+                            return existingNote
+                        }
+                        return "\(insulinName) \(formattedAmount)".trimmingCharacters(in: .whitespaces)
+                    }()
                     return NightscoutTreatment(
                         duration: nil,
                         rawDuration: nil,
                         rawRate: nil,
                         absolute: nil,
                         rate: nil,
-                        eventType: .basalBolus,
+                        eventType: .nsAnnouncement,
                         createdAt: event.timestamp,
                         enteredBy: NightscoutTreatment.local,
                         bolus: nil,
-                        insulin: event.bolus?.amount as Decimal?,
-                        notes: "MDI Basal",
+                        insulin: amountValue,
+                        notes: noteText,
                         carbs: nil,
                         fat: nil,
                         protein: nil,
