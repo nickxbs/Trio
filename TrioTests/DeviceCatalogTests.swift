@@ -311,25 +311,28 @@ import UIKit
 // MARK: - Nightscout URL Validator Tests
 
 @Suite("Nightscout URL Validator Tests") struct NightscoutURLValidatorTests {
-    @Test("Valid oracle.cgmsim.com URLs are accepted")
-    func testValidOracleCGMSimURLs() {
-        #expect(NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle.cgmsim.com"))
-        #expect(NightscoutURLValidator.isValidNightscoutURL("https://demo-test-1.oracle.cgmsim.com"))
-        #expect(NightscoutURLValidator.isValidNightscoutURL("https://patient01.oracle.cgmsim.com/"))
-        #expect(NightscoutURLValidator.isValidNightscoutURL("https://MYINSTANCE.ORACLE.CGMSIM.COM"))
+    @Test("Valid cgmsim.com URLs are accepted")
+    func testValidCGMSimURLs() {
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://myinstance.cgmsim.com"))
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://demo-test-1.cgmsim.com"))
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://patient01.cgmsim.com/"))
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://MYINSTANCE.CGMSIM.COM"))
     }
 
-    @Test("Valid oracle2.cgmsim.com URLs are accepted")
-    func testValidOracle2CGMSimURLs() {
+    @Test("Valid multi-level cgmsim.com subdomain URLs are accepted")
+    func testValidMultiLevelCGMSimURLs() {
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://nicola.nocturne.cgmsim.com"))
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle.cgmsim.com"))
         #expect(NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle2.cgmsim.com"))
         #expect(NightscoutURLValidator.isValidNightscoutURL("https://sandbox-99.oracle2.cgmsim.com"))
-        #expect(NightscoutURLValidator.isValidNightscoutURL("https://demo.oracle2.cgmsim.com/"))
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle3.cgmsim.com"))
+        #expect(NightscoutURLValidator.isValidNightscoutURL("https://a.b.c.cgmsim.com/"))
     }
 
     @Test("Non-HTTPS URLs are rejected")
     func testNonHTTPSRejected() {
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("http://myinstance.oracle.cgmsim.com"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("http://myinstance.oracle2.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("http://myinstance.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("http://nicola.nocturne.cgmsim.com"))
         #expect(!NightscoutURLValidator.isValidNightscoutURL("ftp://myinstance.oracle.cgmsim.com"))
     }
 
@@ -337,49 +340,46 @@ import UIKit
     func testDisallowedDomainsRejected() {
         #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.herokuapp.com"))
         #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.nightscout.pro"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle3.cgmsim.com"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://evilcgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://cgmsim.com.evil.com"))
         #expect(!NightscoutURLValidator.isValidNightscoutURL("https://google.com"))
     }
 
-    @Test("URLs without instance subdomain are rejected")
-    func testMissingInstanceRejected() {
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://oracle.cgmsim.com"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://oracle2.cgmsim.com"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://.oracle.cgmsim.com"))
+    @Test("URLs without subdomain are rejected")
+    func testMissingSubdomainRejected() {
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://a..cgmsim.com"))
     }
 
-    @Test("Nested subdomains are rejected")
-    func testNestedSubdomainsRejected() {
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://sub.myinstance.oracle.cgmsim.com"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://a.b.oracle2.cgmsim.com"))
-    }
-
-    @Test("Invalid instance names are rejected")
-    func testInvalidInstanceNamesRejected() {
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://-myinstance.oracle.cgmsim.com"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance-.oracle.cgmsim.com"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://my_instance.oracle.cgmsim.com"))
+    @Test("Invalid subdomain labels are rejected")
+    func testInvalidSubdomainLabelsRejected() {
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://-myinstance.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance-.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://my_instance.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://nicola.-nocturne.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://nicola.nocturne-.cgmsim.com"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://nicola.noc_turne.cgmsim.com"))
     }
 
     @Test("URLs with paths other than root are rejected")
     func testNonRootPathsRejected() {
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle.cgmsim.com/api/v1"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle.cgmsim.com/entries.json"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.cgmsim.com/api/v1"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://nicola.nocturne.cgmsim.com/entries.json"))
     }
 
     @Test("Non-standard ports, queries, and fragments are rejected")
     func testPortQueryFragmentRejected() {
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle.cgmsim.com:8080"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle.cgmsim.com?token=123"))
-        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.oracle.cgmsim.com#status"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://myinstance.cgmsim.com:8080"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://nicola.nocturne.cgmsim.com?token=123"))
+        #expect(!NightscoutURLValidator.isValidNightscoutURL("https://nicola.nocturne.cgmsim.com#status"))
     }
 
     @Test("Normalize trims whitespace, multiple trailing slashes, and auto-prepends https")
     func testNormalize() {
         #expect(NightscoutURLValidator.normalize("  https://myinstance.oracle.cgmsim.com///  ") == "https://myinstance.oracle.cgmsim.com")
-        #expect(NightscoutURLValidator.normalize("myinstance.oracle.cgmsim.com") == "https://myinstance.oracle.cgmsim.com")
-        #expect(NightscoutURLValidator.normalize("myinstance.oracle2.cgmsim.com/") == "https://myinstance.oracle2.cgmsim.com")
-        #expect(NightscoutURLValidator.isValidNightscoutURL("myinstance.oracle.cgmsim.com"))
+        #expect(NightscoutURLValidator.normalize("nicola.nocturne.cgmsim.com") == "https://nicola.nocturne.cgmsim.com")
+        #expect(NightscoutURLValidator.normalize("myinstance.cgmsim.com/") == "https://myinstance.cgmsim.com")
+        #expect(NightscoutURLValidator.isValidNightscoutURL("nicola.nocturne.cgmsim.com"))
     }
 }

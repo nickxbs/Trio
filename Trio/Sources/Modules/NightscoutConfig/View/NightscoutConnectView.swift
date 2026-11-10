@@ -21,7 +21,7 @@ struct NightscoutConnectView: View {
                 content: {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            TextField("https://<instance>.oracle.cgmsim.com", text: $state.url)
+                            TextField("https://<instance>.cgmsim.com", text: $state.url)
                                 .disableAutocorrection(true)
                                 .textContentType(.URL)
                                 .autocapitalization(.none)
@@ -31,7 +31,7 @@ struct NightscoutConnectView: View {
                                     .foregroundStyle(.orange)
                             }
                         }
-                        Text("Allowed: https://*.oracle.cgmsim.com or https://*.oracle2.cgmsim.com")
+                        Text("Allowed: https://*.cgmsim.com")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }

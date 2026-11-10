@@ -1557,12 +1557,10 @@ extension BaseNightscoutManager {
 // MARK: - Nightscout URL Validator
 
 enum NightscoutURLValidator {
-    private static let allowedDomains: Set<String> = [
-        "oracle.cgmsim.com",
-        "oracle2.cgmsim.com"
-    ]
+    private static let requiredDomainSuffix = ["cgmsim", "com"]
 
-    /// Checks if the provided URL conforms to https://<instance>.oracle.cgmsim.com or https://<instance>.oracle2.cgmsim.com
+    /// Checks if the provided URL is an HTTPS URL whose host ends with .cgmsim.com
+    /// (e.g., https://<instance>.cgmsim.com or https://nicola.nocturne.cgmsim.com)
     static func isValidNightscoutURL(_ urlString: String) -> Bool {
         let cleaned = normalize(urlString)
         guard let url = URL(string: cleaned),
@@ -1585,22 +1583,24 @@ enum NightscoutURLValidator {
             return false
         }
 
-        let parts = host.split(separator: ".")
-        // Must consist of <instance>.<domain> (exactly 4 components: instance + oracle/oracle2 + cgmsim + com)
-        guard parts.count == 4 else { return false }
-
-        let instance = String(parts[0])
-        let domain = parts[1...].joined(separator: ".")
-
-        guard allowedDomains.contains(domain) else { return false }
-
-        // Instance subdomain characters: alphanumeric and hyphens, not empty, no hyphens at start/end
-        let allowedChars = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-"))
-        guard !instance.isEmpty,
-              instance.unicodeScalars.allSatisfy({ allowedChars.contains($0) }),
-              !instance.hasPrefix("-"),
-              !instance.hasSuffix("-")
+        let parts = host.split(separator: ".", omittingEmptySubsequences: false)
+        // Must have at least one subdomain label before cgmsim.com
+        guard parts.count >= requiredDomainSuffix.count + 1,
+              parts.suffix(requiredDomainSuffix.count).map(String.init) == requiredDomainSuffix
         else {
+            return false
+        }
+
+        let subdomainLabels = parts.dropLast(requiredDomainSuffix.count)
+
+        // Subdomain label characters: alphanumeric and hyphens, not empty, no hyphens at start/end
+        let allowedChars = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-"))
+        guard subdomainLabels.allSatisfy({ label in
+            !label.isEmpty &&
+                label.unicodeScalars.allSatisfy { allowedChars.contains($0) } &&
+                !label.hasPrefix("-") &&
+                !label.hasSuffix("-")
+        }) else {
             return false
         }
 
@@ -1621,7 +1621,7 @@ enum NightscoutURLValidator {
 
     static var validationErrorMessage: String {
         String(
-            localized: "URL must be in the format https://<instance>.oracle.cgmsim.com or https://<instance>.oracle2.cgmsim.com",
+            localized: "URL must be in the format https://*.cgmsim.com",
             comment: "Nightscout URL domain restriction error"
         )
     }
